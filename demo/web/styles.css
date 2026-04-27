@@ -1,0 +1,553 @@
+/* =========================================================
+   CSS Variables (Light / Dark)
+   ========================================================= */
+
+:root {
+  --bg-color: #f4f6f9;
+  --card-bg: #ffffff;
+  --text-color: #1f2937;
+  --muted-text: #6b7280;
+
+  --header-bg: #004a70;
+  --header-text: #ffffff;
+
+  --border-color: rgba(0, 0, 0, 0.12);
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+  --footer-bg: #eaeaea;
+
+  --primary: #0072ce;
+  --primary-hover: #005fa3;
+}
+
+body.dark {
+  --bg-color: #121212;
+  --card-bg: #1e1e1e;
+  --text-color: #e5e7eb;
+  --muted-text: #9ca3af;
+
+  --header-bg: #0b3c5d;
+  --header-text: #ffffff;
+
+  --border-color: rgba(255, 255, 255, 0.15);
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+
+  --footer-bg: #1a1a1a;
+}
+
+/* =========================================================
+   Base Layout
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* =========================================================
+   Header
+   ========================================================= */
+
+.header {
+  padding: 24px 30px;
+  background: var(--header-bg);
+  color: var(--header-text);
+}
+
+.header-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h1 {
+  margin: 0;
+}
+
+.header p {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+}
+
+/* =========================================================
+   Cards
+   ========================================================= */
+
+.card {
+  margin: 20px 0;
+  padding: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.note {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--muted-text);
+}
+
+/* =========================================================
+   Features Section
+   ========================================================= */
+
+.features-title {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 28px;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: transform 0.25s ease;
+}
+
+.feature:hover {
+  transform: translateY(-4px);
+}
+
+.feature-icon {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feature-icon img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.feature:hover .feature-icon img {
+  transform: scale(1.1);
+}
+
+.feature-text h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.feature-text p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   Call To Action
+   ========================================================= */
+
+.cta-container {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 12px 28px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #ffffff;
+  background: var(--primary);
+  border-radius: 6px;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.cta-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   KPI / Live Avi Analytics
+   ========================================================= */
+
+.kpi-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.kpi-group-title {
+  margin-bottom: 1rem;
+  padding-bottom: 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0b5cab;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+body.dark .kpi-group-title {
+  color: #7db8ff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.kpi {
+  position: relative;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  color: var(--muted-text);
+}
+
+.kpi-value {
+  margin-top: 6px;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* =========================================================
+   KPI Tooltips
+   ========================================================= */
+
+.tooltip-text {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 220px;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  color: #ffffff;
+  background: #111827;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 10px);
+  transition: all 0.25s ease;
+  z-index: 10;
+}
+
+.tooltip:hover .tooltip-text {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+body.dark .tooltip-text {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+/* =========================================================
+   WAF Demo States
+   ========================================================= */
+
+.kpi.waf-safe {
+  border-color: #2e7d32;
+}
+
+.kpi.waf-safe .kpi-value {
+  color: #2e7d32;
+}
+
+.kpi.waf-blocked {
+  border-color: #c62828;
+  background: rgba(198, 40, 40, 0.05);
+}
+
+.kpi.waf-blocked .kpi-value {
+  color: #c62828;
+}
+
+/* Emphasized attack button */
+.demo-button.danger {
+  background: #c62828;
+}
+
+.demo-button.danger:hover {
+  background: #b71c1c;
+}
+
+
+/* =========================================================
+   Content Switching
+   ========================================================= */
+
+.banner {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 6px;
+}
+
+/* =========================================================
+   Tables
+   ========================================================= */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  text-align: left;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body.dark th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* =========================================================
+   Scroll Reveal Animations
+   ========================================================= */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================================================
+   Footer
+   ========================================================= */
+
+footer {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted-text);
+  background: var(--footer-bg);
+}
+
+/* =========================================================
+   Dark Mode Toggle
+   ========================================================= */
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 24px;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+input:checked + .slider {
+  background: #2196f3;
+}
+
+input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+/* =========================================================
+   Demo Controls
+   ========================================================= */
+
+.demo-controls {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.demo-button {
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.demo-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+.demo-hint {
+  font-size: 0.85rem;
+  color: #666666;
+}
+
+body.dark .demo-hint {
+  color: #aaaaaa;
+}
+
+/* =========================================================
+   Architecture Slideshow
+   ========================================================= */
+
+.slideshow-container {
+  position: relative;
+  max-width: 900px;
+  margin: 24px auto 0;
+  text-align: center;
+  min-height: 460px;
+}
+
+.slide {
+  display: none;
+  margin: 0;
+  height: 100%;
+}
+
+.slide.active {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.slide img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+body.dark .slide img {
+  background: #1E1E1E;
+}
+
+.slide figcaption {
+  margin-top: 12px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: var(--muted-text);
+}
+
+/* Navigation Buttons */
+
+.slide-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 12px;
+  font-size: 1.8rem;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.slide-nav.prev {
+  left: -10px;
+}
+
+.slide-nav.next {
+  right: -10px;
+}
+
+.slide-nav:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* =========================================================
+   Slideshow Dots
+   ========================================================= */
+
+.slide-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.slide-dots .dot {
+  width: 10px;
+  height: 10px;
+  border: none;
+  border-radius: 50%;
+  background: #c7cdd4;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.slide-dots .dot:hover {
+  transform: scale(1.2);
+}
+
+.slide-dots .dot.active {
+  background: var(--primary);
+}
+
+body.dark .slide-dots .dot {
+  background: #555555;
+}
+
+body.dark .slide-dots .dot.active {
+  background: #7db8ff;
+}

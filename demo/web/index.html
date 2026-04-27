@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Avi Load Balancer Demo</title>
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/x-icon" href="/media/favicon.ico">
+</head>
+
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <header class="header">
+    <div class="header-content">
+      <div>
+        <h1>VMware Avi Load Balancer</h1>
+        <p>Application Delivery &amp; Load Balancing – 101 Demo</p>
+      </div>
+
+      <div class="theme-toggle">
+        <label class="switch">
+          <input type="checkbox" id="theme-toggle">
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Dark Mode</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <div class="container">
+
+    <section class="card reveal">
+      <h2>What is Avi?</h2>
+      <p>
+        One Platform for Load Balancing, Application Security,
+        Container Ingress and Analytics
+      </p>
+    </section>
+
+    <!-- ================= ARCHITECTURE ================= -->
+    <section class="card reveal">
+      <h2>Overview</h2>
+
+      <div class="slideshow-container">
+
+        <figure class="slide active">
+          <img src="/media/avi-platform-overview.png" alt="Avi Platform Overview">
+          <figcaption>
+            A centralized control plane with distributed Service Engines across
+            bare metal, virtual machines, and containers enables full automation,
+            autoscaling, and self-healing while reducing operational complexity.
+          </figcaption>
+        </figure>
+
+        <figure class="slide">
+          <img src="/media/avi-web-app-and-api-security.png" alt="Web App and API Security">
+          <figcaption>
+            Integrated WAF, bot, and API protection with real-time threat
+            intelligence and advanced analytics, providing end-to-end
+            application security visibility from a single dashboard.
+          </figcaption>
+        </figure>
+
+        <figure class="slide">
+          <img src="/media/avi-kubernetes-ingress-services.png" alt="Kubernetes Ingress Services">
+          <figcaption>
+            Enterprise-class load balancing, ingress, analytics, and security
+            through a unified Kubernetes-native Gateway API.
+          </figcaption>
+        </figure>
+
+        <figure class="slide">
+          <img src="/media/avi-hybrid-cloud-use-cases.png" alt="Hybrid Cloud Use Cases">
+          <figcaption>
+            Traditional load balancers lack the automation, elasticity, and
+            centralized management needed for modern cloud environments.
+          </figcaption>
+        </figure>
+
+        <!-- Slide Dots -->
+        <div class="slide-dots" aria-label="Architecture slides navigation">
+          <button class="dot active" data-slide="0" aria-label="Slide 1"></button>
+          <button class="dot" data-slide="1" aria-label="Slide 2"></button>
+          <button class="dot" data-slide="2" aria-label="Slide 3"></button>
+          <button class="dot" data-slide="3" aria-label="Slide 4"></button>
+        </div>
+
+        <!-- Navigation -->
+        <button class="slide-nav prev" aria-label="Previous slide">‹</button>
+        <button class="slide-nav next" aria-label="Next slide">›</button>
+
+      </div>
+    </section>
+
+    <!-- ================= FEATURES ================= -->
+    <section class="card features reveal">
+      <h2 class="features-title">Avi Features</h2>
+
+      <div class="features-grid">
+
+        <div class="feature">
+          <div class="feature-icon">
+            <img src="/media/icon-networking-load-balancer-2color-light-bg.svg" alt="">
+          </div>
+          <div class="feature-text">
+            <h3>Local &amp; Global Load Balancing</h3>
+            <p>
+              Intelligent L4–L7 load balancing with TLS termination, GSLB,
+              DNS integration, and traffic steering.
+            </p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            <img src="/media/icon-business-business-plan-2color-light-bg.svg" alt="">
+          </div>
+          <div class="feature-text">
+            <h3>Predictive Autoscaling</h3>
+            <p>
+              Analytics-driven automation dynamically scales Service Engines
+              based on real-time demand.
+            </p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            <img src="/media/icon-ai-solutions-developer-2clr-lghtbg.webp" alt="">
+          </div>
+          <div class="feature-text">
+            <h3>Automation &amp; Self-Service</h3>
+            <p>
+              API-first architecture enabling CI/CD, Infrastructure as Code,
+              and self-service provisioning.
+            </p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            <img src="/media/icon-networking-decision-tree-2color-light-bg.svg" alt="">
+          </div>
+          <div class="feature-text">
+            <h3>Integrations &amp; Analytics</h3>
+            <p>
+              Full visibility with integrations into VMware Aria, Splunk,
+              Ansible, Terraform, and cloud ecosystems.
+            </p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            <img src="/media/icon-networking-firewall-2color-light-bg.svg" alt="">
+          </div>
+          <div class="feature-text">
+            <h3>Web Application Security</h3>
+            <p>
+              Built-in WAF, OWASP CRS protection, DDoS mitigation,
+              rate limiting, and bot detection.
+            </p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            <img src="/media/icon-applications-app-container-1-2color-light-bg.svg" alt="">
+          </div>
+          <div class="feature-text">
+            <h3>Kubernetes Ingress Services</h3>
+            <p>
+              Production-grade Kubernetes ingress with load balancing,
+              security, observability, and traffic management.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="cta-container">
+        <a
+          href="https://www.vmware.com/products/nsx-advanced-load-balancer.html"
+          target="_blank"
+          class="cta-button"
+        >
+          View Datasheet
+        </a>
+      </div>
+    </section>
+
+    <!-- ================= CONTENT SWITCHING ================= -->
+    <section class="card reveal">
+      <h2>Live Content Switching</h2>
+      <p>Images below are served from <code>/media</code> and routed by Avi.</p>
+      <img src="/media/banner.png" alt="Content Banner" class="banner">
+      <p class="note">
+        Content images are load-balanced independently from the application tier.
+      </p>
+    </section>
+
+    <!-- ================= SESSION INFO ================= -->
+    <section class="card reveal">
+      <h2>Session &amp; Client Information</h2>
+
+      <table>
+        <tr><th>Attribute</th><th>Value</th></tr>
+        <tr><td>Client IP</td><td id="client-ip"></td></tr>
+        <tr><td>X-Forwarded-For</td><td id="xff"></td></tr>
+        <tr><td>Web Server</td><td id="web-server"></td></tr>
+      </table>
+
+      <div class="demo-controls">
+        <button id="new-conn-btn" class="demo-button">New Connection</button>
+        <span class="demo-hint">
+          Forces a new TCP connection to demonstrate Round Robin
+        </span>
+      </div>
+
+      <iframe id="rr-iframe" hidden></iframe>
+    </section>
+
+    <!-- ================= WAF DEMO ================= -->
+    <section class="card reveal">
+      <h2>Web Application Firewall (WAF) Demo</h2>
+
+      <div class="kpi-grid">
+        <div id="waf-indicator" class="kpi waf-safe">
+          <div class="kpi-label">WAF Status</div>
+          <div class="kpi-value">
+            <span class="dot"></span> Normal
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-controls">
+        <button id="waf-attack-btn" class="demo-button danger">
+          Simulate Web Attack
+        </button>
+        <span class="demo-hint">
+          Sends a malicious request to trigger Avi WAF enforcement
+        </span>
+      </div>
+    </section>
+
+    <!-- ================= LIVE AVI ANALYTICS ================= -->
+
+    <!-- ================= LIVE AVI ANALYTICS ================= -->
+    <section class="card reveal">
+      <h2>Live Avi Analytics</h2>
+
+      <div class="kpi-groups">
+
+        <!-- LATENCY -->
+        <div class="kpi-group">
+          <h3 class="kpi-group-title">Latency</h3>
+
+          <div class="kpi-grid">
+            <div class="kpi tooltip">
+              <div class="kpi-label">End-to-End Timing</div>
+              <div class="kpi-value">
+                <span id="kpi-e2e">–</span> ms
+              </div>
+              <span class="tooltip-text">
+                Total request processing time measured by Avi, including client RTT,
+                load balancer processing, server response, and data transfer.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRAFFIC -->
+        <div class="kpi-group">
+          <h3 class="kpi-group-title">Traffic</h3>
+
+          <div class="kpi-grid">
+            <div class="kpi tooltip">
+              <div class="kpi-label">Throughput</div>
+              <div class="kpi-value">
+                <span id="kpi-throughput">–</span> Kbps
+              </div>
+              <span class="tooltip-text">
+                Average data throughput handled by this Virtual Service.
+              </span>
+            </div>
+
+            <div class="kpi tooltip">
+              <div class="kpi-label">Requests</div>
+              <div class="kpi-value">
+                <span id="kpi-requests">–</span> /sec
+              </div>
+              <span class="tooltip-text">
+                Number of HTTP requests processed per second.
+              </span>
+            </div>
+
+            <div class="kpi tooltip">
+              <div class="kpi-label">New Connections</div>
+              <div class="kpi-value">
+                <span id="kpi-newconns">–</span> /sec
+              </div>
+              <span class="tooltip-text">
+                Rate of new client connections established per second.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CAPACITY -->
+        <div class="kpi-group">
+          <h3 class="kpi-group-title">Capacity</h3>
+
+          <div class="kpi-grid">
+            <div class="kpi tooltip">
+              <div class="kpi-label">Open Connections</div>
+              <div class="kpi-value">
+                <span id="kpi-openconns">–</span>
+              </div>
+              <span class="tooltip-text">
+                Number of currently open client connections.
+              </span>
+            </div>
+
+            <div class="kpi tooltip">
+              <div class="kpi-label">Estimated Capacity</div>
+              <div class="kpi-value">
+                <span id="kpi-est-cap">–</span> %
+              </div>
+              <span class="tooltip-text">
+                Estimated remaining capacity based on analytics and load trends.
+              </span>
+            </div>
+
+            <div class="kpi tooltip">
+              <div class="kpi-label">Available Capacity</div>
+              <div class="kpi-value">
+                <span id="kpi-avail-cap">–</span> %
+              </div>
+              <span class="tooltip-text">
+                Current available capacity for this Virtual Service.
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    <p class="note">
+      Metrics are scoped to this application’s Virtual Service through the REST API.
+    </p>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <p>Demo powered by Avi | Load Balancing • ADC • Security | &copy;2026 Jeff Yanagi</p>
+  </footer>
+
+  <script src="session.js"></script>
+</body>
+</html>

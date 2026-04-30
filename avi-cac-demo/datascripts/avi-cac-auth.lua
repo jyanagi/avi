@@ -1,7 +1,8 @@
--- Avi / NSX ALB HTTP Request Event Script
+-- Avi Advanced  Load Balancer HTTP Request Event Script
 -- CAC-style certificate validation and identity header assertion
 
 local UPN_DOMAIN = "demo.lab"
+  -- Replace UPN Domain
 
 local function deny(code, msg)
   avi.http.response(code, { ["Content-Type"] = "text/plain" }, msg)

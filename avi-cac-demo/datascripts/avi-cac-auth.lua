@@ -33,7 +33,7 @@ local function extract_edipi(cn)
 end
 
 local function cn_to_upn(cn)
-  -- Example CN: DOE.JANE.A.1357911131
+  -- Example CN: DOE.JANE.A.1234567890
   -- Output: jane.doe@demo.lab
 
   local last, first = string.match(cn, "^([A-Za-z]+)%.([A-Za-z]+)%.")

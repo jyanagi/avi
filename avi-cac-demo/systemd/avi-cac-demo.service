@@ -1,0 +1,16 @@
+[Unit]
+Description=Avi CAC Demo Flask Application
+After=network.target
+
+[Service]
+Type=simple
+User=aviapp
+Group=www-data
+WorkingDirectory=/opt/avi-cac-demo
+EnvironmentFile=/opt/avi-cac-demo/.env
+ExecStart=/opt/avi-cac-demo/venv/bin/gunicorn --workers 2 --bind ${APP_BIND} app:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

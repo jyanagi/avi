@@ -89,7 +89,7 @@ certtmpl.msc
 ```
 
 Locate **Smartcard Logon Template**
-Right click -> **Duplicate Template**
+Right click → **Duplicate Template**
 
 Use:
 
@@ -108,7 +108,7 @@ DoD-CAC-User
 Validity:
 *2 years
 *Renewal 6 weeks
--[x] Publish in Active Directory
+- [ x ] Publish in Active Directory
 
 ### Step 3. Request Handling Tab
 Purpose:
@@ -160,8 +160,8 @@ Subject Name Format:
 Common Name
 ```
 
--[x]E-mail name (optional)
--[x]User principal name (UPN)
+- [x] E-mail name (optional)
+- [x] User principal name (UPN)
 
 Note: this template will only provide normal AD CN. Later steps will manually override AD user naming to more DoD-inspired naming standards.
 
@@ -223,7 +223,7 @@ On Domain Controller or RSAT, in **Active Directory Users and Computers**, creat
 certmgr.msc
 ```
 
-Personal -> Certificates -> Request New Certificate
+Personal → Certificates → Request New Certificate
 
 Select:
 

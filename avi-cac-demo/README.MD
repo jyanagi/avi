@@ -41,7 +41,7 @@ A `{"status":"ok"}` should be received. If a `connection refused` error is recei
 ## Avi Configuration
 
 ### PKI Profile
-Import the AD CS issuinog/root CA certificate into Avi and attach it to a PKI Profile
+Import the AD CS issuing/root CA certificate into Avi and attach it to a PKI Profile
 
 Example:
 
@@ -142,11 +142,11 @@ Microsoft Software Key Storage Provider
 ```
 
 or if using physical smartcards:
-*Smart Card CSP
+* Smart Card CSP
 Algorithm:
-*RSA
+* RSA
 Hash:
-*SHA256
+* SHA256
 
 ### Step 5. Subject Name Tab (VERY IMPORTANT)
 Select:

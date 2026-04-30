@@ -80,8 +80,6 @@ DataScript:  HTTP Request Event Script (use datascripts/avi-cac-auth.lua)
 
 ## AD CS Certificate and Cert Issuance
 
-## Certificate Template
-
 ### Step 1. Open Certificate Templates Console
 
 Run:
@@ -185,10 +183,10 @@ Open Application Policies / EKU and make sure the following entries exist by def
 ### Step 7. Security Tab
 Grant these permissions:
 
-** Authenticated Users**
--[x]Read
--[x]Enroll
--[x]Autoenroll (optional)
+**Authenticated Users**
+- [x] Read
+- [x] Enroll
+- [x] Autoenroll (optional)
 
 Alternatively, you could create a separate Security Group, such as `CAC Users` and grant the permissions
 

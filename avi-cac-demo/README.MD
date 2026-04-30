@@ -109,7 +109,7 @@ Validity:
 
 * 2 years
 * Renewal 6 weeks
-- [ x ] Publish in Active Directory
+- [x] Publish in Active Directory
 
 ### Step 3. Request Handling Tab
 Purpose:

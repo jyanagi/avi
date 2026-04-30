@@ -203,9 +203,9 @@ certsrv.msc
 ```
 
 Certificate Template
--> New
--> Certificate Template to Issue
--> select `DoD-CAC-User`
+→ New
+→ Certificate Template to Issue
+→ select `DoD-CAC-User`
 
 ### Step 9. Add CA to NTAuth Store (critica for smart card auth)
 On CA/DC:

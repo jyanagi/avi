@@ -143,8 +143,10 @@ Microsoft Software Key Storage Provider
 
 or if using physical smartcards:
 * Smart Card CSP
+
 Algorithm:
 * RSA
+
 Hash:
 * SHA256
 

@@ -222,6 +222,59 @@ On Domain Controller or RSAT, in **Active Directory Users and Computers**, creat
 
 **From Domain-Joined Workstation** (logged in as Domain User):
 
+#### From Command Prompt
+
+Create user-cac.ini file:
+
+```text
+[Version]
+Signature="$Windows NT$"
+
+[NewRequest]
+Subject = "CN=SMITH.JOHN.A.1234567890,OU=CONTRACTOR,O=U.S. Government,C=US"
+KeyLength = 2048
+Exportable = TRUE
+MachineKeySet = FALSE
+SMIME = FALSE
+PrivateKeyArchive = FALSE
+UserProtected = FALSE
+UseExistingKeySet = FALSE
+ProviderName = "Microsoft Software Key Storage Provider"
+RequestType = PKCS10
+HashAlgorithm = sha256
+KeyUsage = 0xa0
+KeyAlgorithm = RSA
+
+[Extensions]
+2.5.29.17 = "{text}"
+_continue_ = "upn=john.smith@demo.lab&"
+_continue_ = "email=john.smith@demo.lab"
+
+[EnhancedKeyUsageExtension]
+OID=1.3.6.1.4.1.311.20.2.2
+OID=1.3.6.1.5.5.7.3.2
+
+[RequestAttributes]
+CertificateTemplate = DoD-CAC-User
+```
+
+Request the Certificate:
+```text
+   certreq -new user-cac.inf user-cac.req
+   certreq -submit user-cac.req user-cac.cer
+   certreq -accept user-cac.cer
+```
+
+Validate the Certificate:
+
+```text
+certmgr.msc
+```
+
+Personal → Certificates
+
+#### From Certificate Management Console
+
 ```text
 certmgr.msc
 ```

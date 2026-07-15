@@ -176,3 +176,20 @@
       delay: 30
       when: cluster_size == 3
       tags: [cluster]
+
+     # ── System Configurations ──────────────────────────────────
+    - name: Configure DNS, NTP, and disable SMTP
+      vmware.alb.avi_systemconfiguration:
+        avi_credentials:
+          controller: "{{ controllers[0].ip }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        dns_configuration:
+          search_domain: "{{ avi_dns_search_domain }}"
+          server_list: "{{ avi_dns_servers }}"
+        ntp_configuration:
+          ntp_servers: "{{ avi_ntp_servers }}"
+        email_configuration:
+          smtp_type: "SMTP_NONE"
+      tags: [systemconfig]

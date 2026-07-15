@@ -1,0 +1,4 @@
+collections:
+  - name: vmware.vmware
+  - name: community.vmware
+  - name: vmware.alb

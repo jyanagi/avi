@@ -173,7 +173,6 @@ This opens your default editor. Enter the following, replacing the placeholder v
 vault_vcenter_password: "your-vcenter-password"
 vault_avi_initial_password: "the-controller-default-password"
 vault_avi_admin_password: "your-new-admin-password"
-vault_avi_backup_passphrase: "your-backup-passphrase"
 ```
 
 To edit this file later without decrypting it manually:

@@ -37,3 +37,34 @@ all_controllers:
 
 # Avi API version to target
 avi_api_version: "32.1.1"
+
+# System Configuration
+avi_ntp_servers:
+  # For FQDN entries
+  - server:
+      addr: "0.us.pool.ntp.org"
+      type: "DNS"
+  - server:
+      addr: "1.us.pool.ntp.org"
+      type: "DNS"
+  - server:
+      addr: "2.us.pool.ntp.org"
+      type: "DNS"
+  - server:
+      addr: "3.us.pool.ntp.org"
+      type: "DNS"
+  # For IPv4 entries
+  - server:
+      addr: "66.118.228.14"
+      type: "V4"
+  - server:
+      addr: "69.30.247.121"
+      type: "V4"
+
+avi_dns_servers:
+  - addr: "8.8.8.8"
+    type: "V4"
+  - addr: "8.8.4.4"
+    type: "V4"
+
+avi_dns_search_domain: "acme.com"

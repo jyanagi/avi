@@ -1,0 +1,178 @@
+---
+- name: Deploy Avi Controller(s) and optionally form a cluster
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - vars.yml
+    - vault.yml
+  vars:
+    controllers: "{{ all_controllers[:cluster_size] }}"
+
+  tasks:
+    # ── Deploy VM(s) from content library ──────────────────────
+    - name: Deploy Controller VM(s) from content library
+      vmware.vmware.deploy_content_library_ovf:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        library_item_name: "{{ library_item_name }}"
+        library_name: "{{ library_name }}"
+        vm_name: "{{ item.vm_name }}"
+        datacenter: "{{ datacenter_name }}"
+        datastore: "{{ datastore_name }}"
+        resource_pool: "{{ resource_pool_name }}"
+      loop: "{{ controllers }}"
+      tags: [deploy]
+
+    # ── Network and vApp properties ─────────────────────────────
+    - name: Set network and vApp properties for each node
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        name: "{{ item.vm_name }}"
+        datacenter: "{{ datacenter_name }}"
+        state: present
+        networks:
+          - name: "{{ management_network }}"
+        vapp_properties:
+          - id: "avi.mgmt-ip.CONTROLLER"
+            value: "{{ item.ip }}"
+          - id: "avi.mgmt-mask.CONTROLLER"
+            value: "{{ controller_mask }}"
+          - id: "avi.default-gw.CONTROLLER"
+            value: "{{ controller_gw }}"
+      loop: "{{ controllers }}"
+      tags: [network]
+
+    # ── Power on ─────────────────────────────────────────────────
+    - name: Power on each Controller node
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+        name: "{{ item.vm_name }}"
+        datacenter: "{{ datacenter_name }}"
+        state: poweredon
+      loop: "{{ controllers }}"
+      tags: [poweron]
+
+    # ── Wait for boot and confirm API ───────────────────────────
+    - name: Wait for each Controller's management port to come up
+      ansible.builtin.wait_for:
+        host: "{{ item.ip }}"
+        port: 443
+        delay: 30
+        timeout: 900
+      loop: "{{ controllers }}"
+      tags: [bootstrap]
+
+    - name: Confirm Controller API is responding
+      ansible.builtin.uri:
+        url: "https://{{ item.ip }}/api/initial-data"
+        method: GET
+        validate_certs: false
+        status_code: [200, 401, 403]
+      loop: "{{ controllers }}"
+      tags: [bootstrap]
+
+    # ── Session login and password change ───────────────────────
+    - name: Log in to Avi Controller to establish session
+      ansible.builtin.uri:
+        url: "https://{{ item.ip }}/login"
+        method: POST
+        validate_certs: false
+        body_format: json
+        body:
+          username: "admin"
+          password: "{{ vault_avi_initial_password }}"
+        status_code: [200]
+      register: avi_login
+      loop: "{{ controllers }}"
+      tags: [bootstrap]
+
+    - name: Set new admin password using session auth
+      ansible.builtin.uri:
+        url: "https://{{ item.item.ip }}/api/useraccount"
+        method: PUT
+        validate_certs: false
+        headers:
+          X-CSRFToken: "{{ item.cookies.csrftoken }}"
+          Referer: "https://{{ item.item.ip }}/"
+          Cookie: "csrftoken={{ item.cookies.csrftoken }}; sessionid={{ item.cookies.sessionid }}"
+        body_format: json
+        body:
+          old_password: "{{ vault_avi_initial_password }}"
+          password: "{{ vault_avi_admin_password }}"
+        status_code: [200, 201]
+      loop: "{{ avi_login.results }}"
+      tags: [bootstrap]
+
+    # ── Complete first-boot welcome workflow ────────────────────
+    - name: Complete welcome workflow on each node
+      vmware.alb.avi_systemconfiguration:
+        avi_credentials:
+          controller: "{{ item.ip }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        welcome_workflow_complete: true
+      loop: "{{ controllers }}"
+      tags: [bootstrap]
+
+    # ── Cluster formation ────────────────────────────────────────
+    - name: Build node list for cluster
+      ansible.builtin.set_fact:
+        avi_cluster_nodes: "{{ avi_cluster_nodes | default([]) + [ {'ip': {'addr': item.ip, 'type': 'V4'}, 'name': item.vm_name, 'password': vault_avi_admin_password} ] }}"
+      loop: "{{ controllers }}"
+      when: cluster_size == 3
+      tags: [cluster]
+
+    - name: Form Controller cluster
+      vmware.alb.avi_cluster:
+        avi_credentials:
+          controller: "{{ controllers[0].ip }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        name: "{{ cluster_name }}"
+        virtual_ip:
+          addr: "{{ cluster_vip }}"
+          type: V4
+        nodes: "{{ avi_cluster_nodes }}"
+      when: cluster_size == 3
+      tags: [cluster]
+
+    # ── Wait for cluster to finish forming ──────────────────────
+    - name: Log in to leader for cluster status check
+      ansible.builtin.uri:
+        url: "https://{{ controllers[0].ip }}/login"
+        method: POST
+        validate_certs: false
+        body_format: json
+        body:
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+        status_code: [200]
+      register: cluster_check_login
+      when: cluster_size == 3
+      tags: [cluster]
+
+    - name: Wait for cluster to become ready
+      ansible.builtin.uri:
+        url: "https://{{ controllers[0].ip }}/api/cluster"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "csrftoken={{ cluster_check_login.cookies.csrftoken }}; sessionid={{ cluster_check_login.cookies.sessionid }}"
+        status_code: [200, 503]
+      register: cluster_status
+      until: cluster_status.status == 200 and cluster_status.json.nodes is defined and (cluster_status.json.nodes | length) == cluster_size
+      retries: 40
+      delay: 30
+      when: cluster_size == 3
+      tags: [cluster]

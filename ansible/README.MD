@@ -153,9 +153,7 @@ ansible-vault edit vault.yml
 
 Notes on the initial admin password:
 
-- Current Avi Controller builds generate a random default admin password on first boot rather than using a fixed default. This password is not predictable in advance.
-- Retrieve it from the VM console in vCenter (not SSH, which is blocked until the password is changed) immediately after first boot.
-- Set `vault_avi_initial_password` to this generated value before running the bootstrap steps.
+Current Avi Controller are pre-configured with a default admin password on first boot. This password can be downloaded (Default_password.txt) from the Avi product files within the Broadcom Support Portal. 
 
 ## 6. Run the playbook
 

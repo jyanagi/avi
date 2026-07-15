@@ -1,0 +1,39 @@
+# vCenter connection
+vcenter_hostname: "vc01.demo.lab"
+vcenter_username: "administrator@vsphere.local"
+vcenter_password: "{{ vault_vcenter_password }}"
+
+# Deployment target
+datacenter_name: "Datacenter1"
+datastore_name: "datastore1"
+resource_pool_name: "Resources"
+management_network: "Management-PG"
+
+# Content library source
+library_name: "your-content-library-name"
+library_item_name: "controller-32.1.1-9129"
+
+# Cluster sizing
+# Set to 1 for a single node, 3 for a three-node cluster
+cluster_size: 3
+
+# Network settings applied to every node
+controller_mask: "255.255.255.0"
+controller_gw: "10.10.10.1"
+
+# Cluster identity (only used when cluster_size is 3)
+cluster_name: "avi-cluster-01"
+cluster_vip: "10.10.10.60"
+
+# Controller node identities
+# Only the first `cluster_size` entries are used
+all_controllers:
+  - vm_name: "avi-controller-01"
+    ip: "10.10.10.50"
+  - vm_name: "avi-controller-02"
+    ip: "10.10.10.51"
+  - vm_name: "avi-controller-03"
+    ip: "10.10.10.52"
+
+# Avi API version to target
+avi_api_version: "32.1.1"

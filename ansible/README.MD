@@ -98,7 +98,7 @@ management_network: "Management-PG"
 
 # Content library source
 library_name: "your-content-library-name"
-library_item_name: "avi-controller-22.1.4"
+library_item_name: "controller-32.1.1-9129"
 
 # Cluster sizing
 # Set to 1 for a single node, 3 for a three-node cluster
@@ -123,7 +123,7 @@ all_controllers:
     ip: "10.10.10.52"
 
 # Avi API version to target
-avi_api_version: "22.1.4"
+avi_api_version: "32.1.1"
 ```
 
 ## 5. Configure secrets with Ansible Vault

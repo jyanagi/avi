@@ -1,0 +1,6 @@
+ansible-core==2.19.11
+requests
+pyOpenSSL
+pyvmomi
+setuptools<81
+vsphere-automation-sdk @ git+https://github.com/vmware/vsphere-automation-sdk-python.git

@@ -1,5 +1,5 @@
 ---
-- name: Deploy Avi Controller(s) and optionally form a cluster
+- name: Deploy Avi Controller(s), form a cluster, and configure vCenter Cloud
   hosts: localhost
   connection: local
   gather_facts: false
@@ -8,9 +8,10 @@
     - vault.yml
   vars:
     controllers: "{{ all_controllers[:cluster_size] }}"
+    avi_controller_target: "{{ cluster_vip if cluster_size == 3 else controllers[0].ip }}"
 
   tasks:
-    # -- Deploy VM(s) from content library ----------------------
+    # -- Deploy VM(s) from content library --------------------
     - name: Deploy Controller VM(s) from content library
       vmware.vmware.deploy_content_library_ovf:
         hostname: "{{ vcenter_hostname }}"
@@ -26,7 +27,7 @@
       loop: "{{ controllers }}"
       tags: [deploy]
 
-    # -- Network and vApp properties -----------------------------
+    # -- Network and vApp properties ---------------------------
     - name: Set network and vApp properties for each node
       community.vmware.vmware_guest:
         hostname: "{{ vcenter_hostname }}"
@@ -61,13 +62,13 @@
       loop: "{{ controllers }}"
       tags: [poweron]
 
-    # -- Wait for boot and confirm API ---------------------------
+    # -- Wait for boot and confirm API -----------------------------
     - name: Wait for each Controller's management port to come up
       ansible.builtin.wait_for:
         host: "{{ item.ip }}"
         port: 443
         delay: 30
-        timeout: 900
+        timeout: 1800
       loop: "{{ controllers }}"
       tags: [bootstrap]
 
@@ -80,7 +81,7 @@
       loop: "{{ controllers }}"
       tags: [bootstrap]
 
-    # -- Session login and password change -----------------------
+    # -- Session login and password change ------------------------
     - name: Log in to Avi Controller to establish session
       ansible.builtin.uri:
         url: "https://{{ item.ip }}/login"
@@ -112,21 +113,7 @@
       loop: "{{ avi_login.results }}"
       tags: [bootstrap]
 
-    # -- Complete first-boot welcome workflow (per node, pre-cluster) --
-    - name: Complete welcome workflow on each node
-      vmware.alb.avi_systemconfiguration:
-        avi_credentials:
-          controller: "{{ item.ip }}"
-          username: "admin"
-          password: "{{ vault_avi_admin_password }}"
-          api_version: "{{ avi_api_version }}"
-        welcome_workflow_complete: true
-        telemetry_configuration:
-          enable: false
-      loop: "{{ controllers }}"
-      tags: [bootstrap]
-
-    # -- Cluster formation ----------------------------------------
+    # -- Cluster formation ------------------------------------------
     - name: Build node list for cluster
       ansible.builtin.set_fact:
         avi_cluster_nodes: "{{ avi_cluster_nodes | default([]) + [ {'ip': {'addr': item.ip, 'type': 'V4'}, 'name': item.vm_name, 'password': vault_avi_admin_password} ] }}"
@@ -149,7 +136,7 @@
       when: cluster_size == 3
       tags: [cluster]
 
-    # -- Wait for cluster to finish forming ----------------------
+    # -- Wait for cluster to finish forming --------------------------
     - name: Log in to leader for cluster status check
       ansible.builtin.uri:
         url: "https://{{ controllers[0].ip }}/login"
@@ -174,35 +161,23 @@
         status_code: [200, 503]
       register: cluster_status
       until: cluster_status.status == 200 and cluster_status.json.nodes is defined and (cluster_status.json.nodes | length) == cluster_size
-      retries: 40
-      delay: 30
+      retries: 120
+      delay: 60
       when: cluster_size == 3
       tags: [cluster]
 
     - name: Pause briefly after cluster ready to allow leader election to settle
       ansible.builtin.pause:
-        seconds: 30
-      when: cluster_size == 3
-      tags: [systemconfig, cluster]
-
-    # -- Post-cluster configuration (always target the cluster VIP) --
-    - name: Reapply welcome workflow completion after cluster formation
-      vmware.alb.avi_systemconfiguration:
-        avi_credentials:
-          controller: "{{ cluster_vip if cluster_size == 3 else controllers[0].ip }}"
-          username: "admin"
-          password: "{{ vault_avi_admin_password }}"
-          api_version: "{{ avi_api_version }}"
-        welcome_workflow_complete: true
-        telemetry_configuration:
-          enable: false
+        echo: no
+        seconds: 60
       when: cluster_size == 3
       tags: [cluster]
 
-    - name: Configure DNS and NTP
+    # -- Post-cluster system configuration (always target the cluster VIP) --
+    - name: Configure DNS, NTP, and SMTP
       vmware.alb.avi_systemconfiguration:
         avi_credentials:
-          controller: "{{ cluster_vip if cluster_size == 3 else controllers[0].ip }}"
+          controller: "{{ avi_controller_target }}"
           username: "admin"
           password: "{{ vault_avi_admin_password }}"
           api_version: "{{ avi_api_version }}"
@@ -218,7 +193,7 @@
     - name: Set backup passphrase
       vmware.alb.avi_backupconfiguration:
         avi_credentials:
-          controller: "{{ cluster_vip if cluster_size == 3 else controllers[0].ip }}"
+          controller: "{{ avi_controller_target }}"
           username: "admin"
           password: "{{ vault_avi_admin_password }}"
           api_version: "{{ avi_api_version }}"
@@ -226,3 +201,202 @@
         backup_passphrase: "{{ vault_avi_backup_passphrase }}"
         upload_to_remote_host: false
       tags: [systemconfig]
+
+
+    # -- vCenter Cloud configuration -----------------------------------
+    - name: Create vCenter Cloud (initial, without management_network)
+      vmware.alb.avi_cloud:
+        avi_credentials:
+          controller: "{{ avi_controller_target }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        name: "{{ vcenter_cloud_name }}"
+        vtype: "CLOUD_VCENTER"
+        dhcp_enabled: "{{ avi_cloud_dhcp_enabled }}"
+        prefer_static_routes: true
+        ip6_autocfg_enabled: false
+        mgmt_ip_v6_enabled: false
+        vcenter_configuration:
+          username: "{{ vcenter_username }}"
+          password: "{{ vcenter_password }}"
+          vcenter_url: "{{ vcenter_hostname }}"
+          datacenter: "{{ datacenter_name }}"
+          privilege: "WRITE_ACCESS"
+          use_content_lib: false
+      tags: [cloud]
+
+    - name: Pause for vCenter inventory discovery
+      ansible.builtin.pause:
+        seconds: "{{ avi_cloud_discovery_wait }}"
+      tags: [cloud]
+
+    - name: Log in for network lookup
+      ansible.builtin.uri:
+        url: "https://{{ avi_controller_target }}/login"
+        method: POST
+        validate_certs: false
+        body_format: json
+        body:
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+        status_code: [200]
+      register: net_lookup_login
+      tags: [cloud]
+
+    - name: Look up discovered management network for SEs
+      ansible.builtin.uri:
+        url: "https://{{ avi_controller_target }}/api/vimgrnwruntime/?name={{ avi_se_management_network }}"
+        method: GET
+        validate_certs: false
+        headers:
+          Cookie: "csrftoken={{ net_lookup_login.cookies.csrftoken }}; sessionid={{ net_lookup_login.cookies.sessionid }}"
+      register: se_network_lookup
+      tags: [cloud]
+
+    - name: Update vCenter Cloud with resolved management network
+      vmware.alb.avi_cloud:
+        avi_credentials:
+          controller: "{{ avi_controller_target }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        avi_api_update_method: patch
+        avi_api_patch_op: replace
+        name: "{{ vcenter_cloud_name }}"
+        vtype: "CLOUD_VCENTER"
+        dhcp_enabled: "{{ avi_cloud_dhcp_enabled }}"
+        ip6_autocfg_enabled: false
+        mgmt_ip_v6_enabled: false
+        prefer_static_routes: true
+        vcenter_configuration:
+          username: "{{ vcenter_username }}"
+          password: "{{ vcenter_password }}"
+          vcenter_url: "{{ vcenter_hostname }}"
+          datacenter: "{{ datacenter_name }}"
+          privilege: "WRITE_ACCESS"
+          use_content_lib: false
+          management_network: "{{ se_network_lookup.json.results[0].url }}"
+      tags: [cloud]
+
+    - name: Create Service Engine Group for vCenter Cloud
+      vmware.alb.avi_serviceenginegroup:
+        avi_credentials:
+          controller: "{{ avi_controller_target }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        name: "{{ avi_se_group_name }}"
+        cloud_ref: "/api/cloud/?name={{ vcenter_cloud_name }}"
+        vcenter_folder: "{{ avi_se_vcenter_folder }}"
+        vcenter_clusters:
+          cluster_refs:
+            - "/api/vimgrclusterruntime/?name={{ vcenter_cluster_name }}"
+          include: true
+        vcpus_per_se: "{{ avi_se_vcpu }}"
+        memory_per_se: "{{ avi_se_mem }}"
+        min_se: "{{ avi_se_min_count }}"
+        max_se: "{{ avi_se_max_count }}"
+        min_scaleout_per_vs: "{{ avi_se_min_scaleout_per_vs }}"
+        max_vs_per_se: "{{ avi_se_max_vs }}"
+        buffer_se: 0
+        se_name_prefix: "{{ avi_se_name_prefix }}"
+        ha_mode: "{{ avi_se_ha_mode }}"
+        realtime_se_metrics: 
+          enabled: "{{ avi_realtime_se_metrics }}"
+          duration: "{{ avi_realtime_se_metrics_duration }}"
+      tags: [cloud]
+
+    # -- vCenter Cloud Network configuration ---------------------------
+    - name: Configure Cloud network for SE Data Network
+      vmware.alb.avi_network:
+        avi_credentials:
+          controller: "{{ avi_controller_target }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        name: "{{ avi_se_data_network }}"
+        cloud_ref: "/api/cloud/?name={{ vcenter_cloud_name }}"
+        configured_subnets:
+          - prefix:
+              ip_addr:
+                type: "V4"
+                addr: "{{ net_address }}"
+              mask: "{{ net_maskbit }}"
+            static_ip_ranges:
+              - range:
+                  begin:
+                    type: "V4"
+                    addr: "{{ beg_vnic_addr }}"
+                  end:
+                    type: "V4"
+                    addr: "{{ end_vnic_addr }}"
+                type: "STATIC_IPS_FOR_SE"
+              - range:
+                  begin:
+                    type: "V4"
+                    addr: "{{ beg_vip_addr }}"
+                  end:
+                    type: "V4"
+                    addr: "{{ end_vip_addr }}"
+                type: "STATIC_IPS_FOR_VIP"
+        exclude_discovered_subnets: false
+        synced_from_se: false
+        dhcp_enabled: "{{ net_dhcp }}"
+      register: avi_se_data_network_result
+      tags: [network]
+
+    - name: Configure IPAM Profile
+      vmware.alb.avi_ipamdnsproviderprofile:
+        avi_credentials:
+          controller: "{{ avi_controller_target }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        name: "{{ avi_ipam_profile_name }}"
+        type: "IPAMDNS_TYPE_INTERNAL"
+        allocate_ip_in_vrf: false
+        internal_profile:
+          ttl: 30
+          usable_networks:
+            - nw_ref: "{{ avi_se_data_network_result.obj.url }}"
+      register: ipam_profile_result
+      tags: [network]
+
+    # -- Update vCenter Cloud configuration with IPAM Profile-----------
+    - name: Update vCenter Cloud with IPAM Profile
+      vmware.alb.avi_cloud:
+        avi_credentials:
+          controller: "{{ avi_controller_target }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        avi_api_update_method: patch
+        avi_api_patch_op: replace
+        name: "{{ vcenter_cloud_name }}"
+        ipam_provider_ref: "{{ ipam_profile_result.obj.url }}"
+      tags: [network]
+
+    # -- Configure VRF Context with Default Route ---------------------
+    - name: Configure VRF Context with Default Route
+      vmware.alb.avi_vrfcontext:
+        avi_credentials:
+          controller: "{{ avi_controller_target }}"
+          username: "admin"
+          password: "{{ vault_avi_admin_password }}"
+          api_version: "{{ avi_api_version }}"
+        cloud_ref: "/api/cloud/?name={{ vcenter_cloud_name }}"
+        name: "{{ avi_vrf_context }}"
+        static_routes:
+          - cloud_ref: "/api/cloud/?name={{ vcenter_cloud_name }}"
+            next_hop:
+              addr: "{{ net_gateway }}"
+              type: "V4"
+            prefix_text: "0.0.0.0/0"
+            prefix:
+              ip_addr:
+                addr: "0.0.0.0"
+                type: "V4"
+              mask: '0'
+            route_id: '1'
+      tags: [network]          

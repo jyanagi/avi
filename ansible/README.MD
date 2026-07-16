@@ -249,11 +249,17 @@ ansible-playbook deploy-avi.yml --ask-vault-pass --tags network
 # Power on only
 ansible-playbook deploy-avi.yml --ask-vault-pass --tags poweron
 
-# Bootstrap (wait for boot, set password, complete welcome workflow)
+# Bootstrap (wait for boot, set password)
 ansible-playbook deploy-avi.yml --ask-vault-pass --tags bootstrap
 
 # Cluster formation and readiness check
 ansible-playbook deploy-avi.yml --ask-vault-pass --tags cluster
+
+# Cloud configuration
+ansible-playbook deploy-avi.yml --ask-vault-pass --tags cloud
+
+# Network configuration (SE Data & VIP ranges, IPAM Profile, VRF context)
+ansible-playbook deploy-avi.yml --ask-vault-pass --tags network
 ```
 
 You can also resume from a specific task by name if a run fails partway through:
@@ -288,21 +294,3 @@ Avi Controller does not accept HTTP Basic Authentication for most POST/PUT opera
 
 **Ansible `until` combined with `loop` does not retry per item.**
 When a task uses both `until`/`retries` and `loop`, only the last item in the loop is actually retried on failure. Earlier items run once and fail without retrying. For polling tasks that need to loop over multiple hosts, use `ansible.builtin.wait_for` instead, which handles its own internal polling correctly per loop item.
-
-## Rebuilding this environment from scratch
-
-```bash
-python3.11 -m venv ~/venvs/avi-ansible
-source ~/venvs/avi-ansible/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-ansible-galaxy collection install -r requirements.yml --force
-```
-
-Then confirm versions:
-
-```bash
-ansible --version
-python --version
-ansible-galaxy collection list
-```

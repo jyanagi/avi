@@ -1,27 +1,41 @@
+---
+# ============================================================
 # vCenter connection
-vcenter_hostname: "vc01.demo.lab"
+# ============================================================
+vcenter_hostname: "vcenter.example.com"
 vcenter_username: "administrator@vsphere.local"
 vcenter_password: "{{ vault_vcenter_password }}"
 
-# Deployment target
-datacenter_name: "Datacenter1"
-datastore_name: "datastore1"
-resource_pool_name: "Resources"
-management_network: "Management-PG"
+# ============================================================
+# vCenter deployment target
+# ============================================================
+datacenter_name: "DC1"
+datastore_name: "datastore0"
+resource_pool_name: "Avi"
+vcenter_cluster_name: "Cluster1"
 
-# Content library source
-library_name: "your-content-library-name"
+# Portgroup names as they exist in vCenter
+management_network: "pg-avi-mgmt"
+avi_se_management_network: "pg-avi-se-mgmt"
+avi_se_data_network: "pg-avi-se-data"
+
+# ============================================================
+# Content library source (Controller OVA)
+# ============================================================
+library_name: "Avi-Content-Library"
 library_item_name: "controller-32.1.1-9129"
 
-# Cluster sizing
-# Set to 1 for a single node, 3 for a three-node cluster
+# ============================================================
+# Controller cluster sizing
+# ============================================================
+# 1 = single node, 3 = three node cluster
 cluster_size: 3
 
-# Network settings applied to every node
+# Network settings applied to every Controller node
 controller_mask: "255.255.255.0"
 controller_gw: "10.10.10.1"
 
-# Cluster identity (only used when cluster_size is 3)
+# Cluster identity (only used when cluster_size == 3)
 cluster_name: "avi-cluster-01"
 cluster_vip: "10.10.10.60"
 
@@ -38,33 +52,60 @@ all_controllers:
 # Avi API version to target
 avi_api_version: "32.1.1"
 
-# System Configuration
-avi_ntp_servers:
-  # For FQDN entries
-  - server:
-      addr: "0.us.pool.ntp.org"
-      type: "DNS"
-  - server:
-      addr: "1.us.pool.ntp.org"
-      type: "DNS"
-  - server:
-      addr: "2.us.pool.ntp.org"
-      type: "DNS"
-  - server:
-      addr: "3.us.pool.ntp.org"
-      type: "DNS"
-  # For IPv4 entries
-  - server:
-      addr: "66.118.228.14"
-      type: "V4"
-  - server:
-      addr: "69.30.247.121"
-      type: "V4"
+# ============================================================
+# Controller system configuration (DNS / NTP)
+# ============================================================
+avi_dns_search_domain: "example.com"
 
 avi_dns_servers:
-  - addr: "8.8.8.8"
+  - addr: "10.10.10.5"
     type: "V4"
-  - addr: "8.8.4.4"
+  - addr: "10.10.10.6"
     type: "V4"
 
-avi_dns_search_domain: "acme.com"
+avi_ntp_servers:
+  - server:
+      addr: "10.10.10.5"
+      type: "V4"
+  - server:
+      addr: "10.10.10.6"
+      type: "V4"
+
+# ============================================================
+# Cloud configuration
+# ============================================================
+vcenter_cloud_name: "vCenter-Cloud"
+avi_cloud_dhcp_enabled: true
+avi_cloud_discovery_wait: 120
+avi_ipam_profile_name: "Cloud-IPAM"
+
+# ============================================================
+# Service Engine Group configuration
+# ============================================================
+avi_se_group_name: "SE-Group"
+avi_se_vcenter_folder: "AviSE"
+avi_se_vcpu: 2
+avi_se_mem: 4096
+avi_se_min_count: 2
+avi_se_max_count: 2
+avi_se_min_scaleout_per_vs: 2
+avi_se_name_prefix: "avi-se"
+avi_se_ha_mode: "HA_MODE_SHARED_PAIR"
+avi_se_max_vs: 10
+avi_realtime_se_metrics: true
+avi_realtime_se_metrics_duration: 30
+
+# ============================================================
+# Service Engine data network configuration
+# ============================================================
+net_address: "10.20.0.0"
+net_maskbit: 25
+net_gateway: "10.20.0.1"
+
+beg_vnic_addr: "10.20.0.10"
+end_vnic_addr: "10.20.0.40"
+beg_vip_addr: "10.20.0.50"
+end_vip_addr: "10.20.0.120"
+
+net_dhcp: false
+avi_vrf_context: "global"

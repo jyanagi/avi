@@ -202,7 +202,6 @@
         upload_to_remote_host: false
       tags: [systemconfig]
 
-
     # -- vCenter Cloud configuration -----------------------------------
     - name: Create vCenter Cloud (initial, without management_network)
       vmware.alb.avi_cloud:

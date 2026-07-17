@@ -1,0 +1,212 @@
+---
+# avi_enable_fips.yml
+#
+# Enables FIPS 140-2/140-3 compliance mode on an Avi Load Balancer Controller.
+# This is a DISRUPTIVE, IRREVERSIBLE operation:
+#   - You must download the associated controller.pkg to generate FIPS image.
+#     which can be downloaded from the support.broadcom.com portal.
+#   - The Controller cannot have any Service Engines deployed when activated.
+#   - If clustering, the cluster must already exist before you activate FIPS.
+#   - The Controller reboots and comes back online in FIPS mode.
+#   - Once FIPS mode is on, it cannot be turned back off.
+#
+# Run with: ansible-playbook avi_enable_fips.yml
+
+- name: Enable FIPS mode on Avi Controller
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    avi_controller: "avi_fqdn_or_ip"
+    avi_username: "your_avi_username>"
+    avi_password: "your_avi_password>"
+    avi_api_version: "32.1.1"
+    reboot_wait_seconds: 30
+    reboot_timeout_retries: 60   # 60 * 30s = 30 min max wait
+    controller_pkg_local_path: "/your/path/controller-32.1.1-9129.pkg"
+    controller_pkg_remote_filename: "controller.pkg"
+
+  tasks:
+
+    - name: Log in to Avi Controller and establish a session
+      ansible.builtin.uri:
+        url: "https://{{ avi_controller }}/login"
+        method: POST
+        body_format: json
+        body:
+          username: "{{ avi_username }}"
+          password: "{{ avi_password }}"
+        validate_certs: false
+        headers:
+          X-Avi-Version: "{{ avi_api_version }}"
+        status_code: 200
+      register: avi_login
+
+    - name: Build session cookie header from login response
+      ansible.builtin.set_fact:
+        avi_cookie: "{{ avi_login.cookies | dict2items | map(attribute='key') | zip(avi_login.cookies | dict2items | map(attribute='value')) | map('join', '=') | join('; ') }}"
+        avi_csrftoken: "{{ avi_login.cookies.csrftoken }}"
+
+    - name: Pre-flight - confirm no Service Engines are deployed
+      ansible.builtin.uri:
+        url: "https://{{ avi_controller }}/api/serviceengine"
+        method: GET
+        validate_certs: false
+        headers:
+          X-Avi-Version: "{{ avi_api_version }}"
+          Cookie: "{{ avi_cookie }}"
+        return_content: true
+      register: se_check
+
+    - name: Fail if any Service Engines exist
+      ansible.builtin.fail:
+        msg: >
+          {{ se_check.json.count }} Service Engine(s) found on this Controller.
+          FIPS mode can only be activated when zero SEs are deployed.
+          Deactivate virtual services and delete existing SEs first.
+      when: se_check.json.count | int > 0
+
+    - name: Pre-flight - confirm controller.pkg exists locally before attempting upload
+      ansible.builtin.stat:
+        path: "{{ controller_pkg_local_path }}"
+      register: pkg_local_stat
+      delegate_to: localhost
+
+    - name: Fail if controller.pkg is not found locally
+      ansible.builtin.fail:
+        msg: >
+          {{ controller_pkg_local_path }} not found on the control node.
+          Download the controller.pkg matching this Controller's exact running
+          version from Broadcom support before continuing.
+      when: not pkg_local_stat.stat.exists
+
+    - name: Pre-flight - get running Controller version
+      ansible.builtin.uri:
+        url: "https://{{ avi_controller }}/api/cluster/version"
+        method: GET
+        validate_certs: false
+        headers:
+          X-Avi-Version: "{{ avi_api_version }}"
+          Cookie: "{{ avi_cookie }}"
+        return_content: true
+      register: controller_version
+
+    - name: Show running Controller version for manual confirmation
+      ansible.builtin.debug:
+        msg: >
+          Running Controller version: {{ controller_version.json.Version | default('unknown') }}.
+          Confirm {{ controller_pkg_local_path }} matches this exact version
+          before proceeding. FIPS activation will fail otherwise.
+
+    - name: Confirm the pkg version matches before uploading
+      ansible.builtin.pause:
+        prompt: >
+          Verify {{ controller_pkg_local_path }} is the controller.pkg for
+          version {{ controller_version.json.Version | default('unknown') }}.
+          Press Ctrl+C, A to abort, or Enter to continue with the upload.
+
+    - name: Copy controller.pkg to the Controller's /tmp via SCP
+      # Requires sshpass (apt/yum install sshpass) since this is
+      # password-based, non-interactive SCP.
+      ansible.builtin.command:
+        cmd: >
+          sshpass -p '{{ avi_password }}' scp -o StrictHostKeyChecking=no
+          {{ controller_pkg_local_path }}
+          {{ avi_username }}@{{ avi_controller }}:/tmp/{{ controller_pkg_remote_filename }}
+      register: pkg_scp
+      changed_when: true
+
+    - name: Register controller.pkg with Avi via CLI
+      ansible.builtin.expect:
+        command: >
+          ssh -tt -o StrictHostKeyChecking=no {{ avi_username }}@{{ avi_controller }}
+        responses:
+          "(?i)password:": "{{ avi_password }}"
+          "\\$\\s*$": ["shell", "exit"]
+          "(?i)login:\\s*$": "{{ avi_username }}"
+          "\\]:\\s*>\\s*$": ["upload image filename /tmp/{{ controller_pkg_remote_filename }}", ""]
+          "(?i)(complete|success|already exists|error|failed)": "exit"
+        timeout: 300
+      register: pkg_register
+
+    - name: Show pkg registration output
+      ansible.builtin.debug:
+        var: pkg_register.stdout_lines
+
+    - name: Confirm intent before proceeding
+      ansible.builtin.pause:
+        prompt: >
+          This will activate FIPS mode on {{ avi_controller }}. This is
+          IRREVERSIBLE and will reboot the Controller. Press Ctrl+C, A to
+          abort, or Enter to continue.
+
+    - name: Activate FIPS mode via Controller CLI
+      ansible.builtin.expect:
+        command: >
+          ssh -tt -o StrictHostKeyChecking=no {{ avi_username }}@{{ avi_controller }}
+        responses:
+          # SSH password prompt, and (reused) the clish Password: prompt below
+          "(?i)password:": "{{ avi_password }}"
+          # bash prompt: 1st occurrence (post-SSH-login) launches the Avi CLI.
+          # 2nd occurrence (after we exit clish below) closes the SSH session.
+          # Without this list, the same regex re-firing "shell" every time it
+          # matches re-enters clish in a loop and keeps resending the command.
+          "\\$\\s*$": ["shell", "exit"]
+          # clish's own separate Login: prompt
+          "(?i)login:\\s*$": "{{ avi_username }}"
+          # clish prompt: only issue the FIPS command on the first occurrence.
+          # Any later occurrence (e.g. before we've exited) sends nothing.
+          "\\]:\\s*>\\s*$": ["system compliancemode fips_mode", ""]
+          "(?i)(are you sure|continue\\?|\\(y/n\\)|yes/no)": "y"
+          # Confirms activation started - exit clish (drops to bash, where
+          # the 2nd "$" match above then closes the SSH session cleanly).
+          "(?i)transition started": "exit"
+        timeout: 90
+      register: fips_activation
+
+    - name: Show FIPS activation output
+      ansible.builtin.debug:
+        var: fips_activation.stdout_lines
+
+    - name: Wait for Controller to go offline for reboot
+      ansible.builtin.pause:
+        seconds: "{{ reboot_wait_seconds }}"
+
+    - name: Log back in after reboot (previous session is invalid once Controller restarts)
+      ansible.builtin.uri:
+        url: "https://{{ avi_controller }}/login"
+        method: POST
+        body_format: json
+        body:
+          username: "{{ avi_username }}"
+          password: "{{ avi_password }}"
+        validate_certs: false
+        headers:
+          X-Avi-Version: "{{ avi_api_version }}"
+        status_code: 200
+      register: avi_relogin
+      until: avi_relogin.status == 200
+      retries: "{{ reboot_timeout_retries }}"
+      delay: "{{ reboot_wait_seconds }}"
+
+    - name: Build post-reboot session cookie header
+      ansible.builtin.set_fact:
+        avi_cookie: "{{ avi_relogin.cookies | dict2items | map(attribute='key') | zip(avi_relogin.cookies | dict2items | map(attribute='value')) | map('join', '=') | join('; ') }}"
+
+    - name: Verify FIPS mode is active
+      ansible.builtin.uri:
+        url: "https://{{ avi_controller }}/api/systemconfiguration"
+        method: GET
+        validate_certs: false
+        headers:
+          X-Avi-Version: "{{ avi_api_version }}"
+          Cookie: "{{ avi_cookie }}"
+        return_content: true
+      register: sys_config
+
+    - name: Report FIPS status
+      ansible.builtin.debug:
+        msg: >
+          FIPS mode reported as:
+          {{ sys_config.json.fips_mode | default('unknown - check manually via
+          `show version` on the Controller CLI') }}

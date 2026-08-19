@@ -1,7 +1,6 @@
 <#
 .SYNOPSIS
-    Validates that an Avi Load Balancer account is usable by ServiceNow Discovery
-    before you save it in the ServiceNow credential store.
+    Validates Avi Load Balancer configuration using REST APIs
 
 .DESCRIPTION
     Runs the same sequence a REST-based Discovery pattern performs:

@@ -35,7 +35,7 @@ param(
     # which is what a multi-tenant Discovery configuration needs.
     [string]$Tenant = 'admin',
 
-    # Leave empty to auto-detect. Supply explicitly (e.g. '22.1.3') to skip
+    # Leave empty to auto-detect. Supply explicitly (e.g. '32.1.2') to skip
     # detection entirely and force a specific API contract.
     [string]$ApiVersion,
 
@@ -100,7 +100,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$ScriptVersion  = '1.8.1'
+$ScriptVersion  = '1.8.2'
 $script:Results = New-Object System.Collections.Generic.List[object]
 $IsCore = $PSVersionTable.PSVersion.Major -ge 6
 
@@ -253,11 +253,14 @@ function ConvertTo-Normalized {
             $n.poolGroup = Get-RefName $Obj.pool_group_ref
             $n.ipAddresses = @($Obj.vip | ForEach-Object { $_.ip_address.addr } | Where-Object { $_ })
             $n.services = @($Obj.services | ForEach-Object {
-                [ordered]@{
-                    port      = $_.port
-                    portRange = $_.port_range_end
-                    ssl       = [bool]$_.enable_ssl
+                # port_range_end equals port on a single-port service. Only
+                # surface it when it actually describes a range.
+                $svc = [ordered]@{ port = $_.port }
+                if ($_.port_range_end -and $_.port_range_end -ne $_.port) {
+                    $svc.portRange = $_.port_range_end
                 }
+                $svc.ssl = [bool]$_.enable_ssl
+                $svc
             })
             $n.sslProfile      = Get-RefName $Obj.ssl_profile_ref
             $n.sslCertificates = Get-RefNames $Obj.ssl_key_and_certificate_refs
@@ -315,9 +318,11 @@ function ConvertTo-Normalized {
         'network' {
             $n.vrf     = Get-RefName $Obj.vrf_context_ref
             $n.dhcp    = $Obj.dhcp_enabled
-            $n.subnets = @($Obj.configured_subnets | ForEach-Object {
-                "$($_.prefix.ip_addr.addr)/$($_.prefix.mask)"
-            })
+            # A subnet entry can exist with no prefix (NSX-T networks whose
+            # addressing is managed upstream). Skip those rather than emitting "/".
+            $n.subnets = ,@($Obj.configured_subnets | ForEach-Object {
+                if ($_.prefix.ip_addr.addr) { "$($_.prefix.ip_addr.addr)/$($_.prefix.mask)" }
+            } | Where-Object { $_ })
         }
         'vrfcontext' {
             $n.staticRoutes = @($Obj.static_routes).Count

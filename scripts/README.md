@@ -37,14 +37,6 @@ $cred = Get-Credential snow-svc
 .\Test-AviDiscoveryCredential.ps1 -Controller avi-ctrl.example.local -Credential $cred -SkipCertificateCheck
 ```
 
-### Verify which build you are running
-
-The script prints its version in the header. If you are troubleshooting with someone, confirm it first:
-
-```powershell
-Select-String -Path .\Test-AviDiscoveryCredential.ps1 -Pattern "ScriptVersion  = "
-```
-
 ---
 
 ## Parameters

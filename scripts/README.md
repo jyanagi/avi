@@ -53,7 +53,7 @@ Select-String -Path .\Test-AviDiscoveryCredential.ps1 -Pattern "ScriptVersion  =
 
 | Parameter | Default | Purpose |
 |---|---|---|
-| `-Controller` | *(required)* | Controller FQDN, VIP, or full URL. Use the **same value ServiceNow is configured with** — if ServiceNow uses a name, do not test with an IP. |
+| `-Controller` | *(required)* | Controller FQDN, VIP, or full URL. |
 | `-Credential` | prompts | A `PSCredential`. Omit to be prompted. Never hardcode a password in the file. |
 | `-Tenant` | `admin` | Tenant scope sent as `X-Avi-Tenant`. Use `*` to test read across all tenants. |
 | `-SkipCertificateCheck` | off | Ignore certificate validation errors. See the [trust store warning](#3-java-trust-store-vs-powershell). |

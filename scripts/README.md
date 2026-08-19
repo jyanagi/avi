@@ -604,11 +604,6 @@ The inventory normalizer maps the fields a CMDB typically reconciles on. **Avi f
 
 **Verified on 32.1.2:** all mapped fields populate correctly, including `mgmtIp` on service engines and `maxSes` / `vcpusPerSe` / `memoryPerSe` on service engine groups. Mappings on older builds (18.x, 20.x, 22.x) have not been verified; spot-check those two object types first if you run against one.
 
-Two edge cases the normalizer handles deliberately:
-
-- An NSX-T network can carry a subnet entry with no prefix, because addressing is managed upstream. Those are skipped rather than emitted as `/`.
-- `port_range_end` equals `port` on a single-port service, so it is only shown when it describes an actual range.
-
 ---
 
 ## Security notes

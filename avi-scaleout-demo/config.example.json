@@ -1,0 +1,10 @@
+{
+  "avi": {
+    "controllerUrl": "https://us-east-avi.demo.lab",
+    "username": "admin",
+    "passwordEnv": "AVI_PASSWORD",
+    "apiVersion": "32.1.1",
+    "cloud": "Demo NSX Cloud",
+    "serviceEngineGroup": "Scaleout-SEG"
+  }
+}

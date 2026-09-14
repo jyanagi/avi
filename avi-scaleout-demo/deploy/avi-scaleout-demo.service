@@ -1,0 +1,19 @@
+[Unit]
+Description=Avi Live Elastic Scale-out Demo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/avi-scaleout-demo
+EnvironmentFile=/etc/avi-scaleout-demo.env
+ExecStart=/usr/bin/node /opt/avi-scaleout-demo/server.js
+Restart=on-failure
+RestartSec=5
+User=nobody
+Group=nobody
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

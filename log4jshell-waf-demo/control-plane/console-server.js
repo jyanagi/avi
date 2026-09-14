@@ -26,7 +26,7 @@ const CALLBACKS_FILE =
 const FONT_DIR = process.env.FONT_DIR || "/opt/log4shell-demo/fonts";
 
 const TARGETS = {
-  vs: { label: "Through Avi VS", url: process.env.VS_URL || "https://scm.demo.lab", waf: true },
+  vs: { label: "Through Avi VS", url: process.env.VS_URL || "https://log4j.us-east.demo.lab", waf: true },
   "direct-a": { label: "Direct to web-a-03a", url: process.env.NODE_A || "http://10.15.148.84:8080", waf: false },
   "direct-b": { label: "Direct to web-a-03b", url: process.env.NODE_B || "http://10.15.148.85:8080", waf: false },
 };

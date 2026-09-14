@@ -1,34 +1,618 @@
-const http=require('http'),https=require('https'),net=require('net'),tls=require('tls'),fs=require('fs'),path=require('path');
-const PORT=+(process.env.PORT||8080),root=path.join(__dirname,'public');
-const AVI={host:process.env.AVI_CONTROLLER||'us-east-avi.demo.lab',user:process.env.AVI_USERNAME||'admin',pass:process.env.AVI_PASSWORD||'',version:process.env.AVI_API_VERSION||'32.1.1',cloud:process.env.AVI_CLOUD||'Demo NSX Cloud',seg:process.env.AVI_SE_GROUP||'Scaleout-SEG',insecure:process.env.AVI_TLS_VERIFY!=='true'};
-const AUTO_RESET_SECONDS=Math.max(0,+(process.env.AUTO_RESET_SECONDS||30));
-const SCALEIN_QUIET_SECONDS=Math.max(30,+(process.env.SCALEIN_QUIET_SECONDS||90));
-const runs=new Map();
-const out=(res,status,data,type='application/json')=>{res.writeHead(status,{'Content-Type':type+'; charset=utf-8','Cache-Control':'no-store'});res.end(type==='application/json'?JSON.stringify(data):data)};
-let aviCookie='',loginPromise;
-function requestAvi(url,method='GET',body='',headers={}){return new Promise((resolve,reject)=>{const req=https.request({hostname:AVI.host,path:url,method,rejectUnauthorized:!AVI.insecure,headers},r=>{let data='';r.on('data',d=>data+=d);r.on('end',()=>resolve({status:r.statusCode,body:data,headers:r.headers}))});req.setTimeout(30000,()=>req.destroy(new Error('Avi Controller request timed out')));req.on('error',reject);if(body)req.write(body);req.end()})}
-async function login(){if(!AVI.pass)throw new Error('AVI_PASSWORD is not set');if(aviCookie)return;if(loginPromise)return loginPromise;loginPromise=(async()=>{const body=new URLSearchParams({username:AVI.user,password:AVI.pass}).toString(),r=await requestAvi('/login','POST',body,{'Content-Type':'application/x-www-form-urlencoded','Content-Length':Buffer.byteLength(body),Referer:`https://${AVI.host}/`});if(r.status<200||r.status>299)throw new Error(`Avi login ${r.status}: ${r.body.slice(0,180)}`);const cookies=r.headers['set-cookie']||[];aviCookie=cookies.map(x=>x.split(';')[0]).join('; ');if(!/sessionid=/.test(aviCookie))throw new Error('Avi login succeeded but no sessionid cookie was returned')})().finally(()=>loginPromise=null);return loginPromise}
-async function avi(apiPath,retry=true){await login();const r=await requestAvi('/api'+apiPath,'GET','',{'Cookie':aviCookie,'X-Avi-Version':AVI.version,'X-Avi-Tenant':'admin','Accept':'application/json','Accept-Encoding':'application/json'});if(r.status===401&&retry){aviCookie='';return avi(apiPath,false)}if(r.status<200||r.status>299)throw new Error(`Avi API ${r.status}: ${r.body.slice(0,180)}`);try{return JSON.parse(r.body)}catch{throw new Error(`Avi returned invalid JSON for ${apiPath}`)}}
-async function aviPost(apiPath,payload={},retry=true){await login();const body=JSON.stringify(payload),csrf=decodeURIComponent((aviCookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)||[])[1]||'');const r=await requestAvi('/api'+apiPath,'POST',body,{'Cookie':aviCookie,'X-CSRFToken':csrf,'X-Avi-Version':AVI.version,'X-Avi-Tenant':'admin','Content-Type':'application/json','Content-Length':Buffer.byteLength(body),Referer:`https://${AVI.host}/`});if(r.status===401&&retry){aviCookie='';return aviPost(apiPath,payload,false)}if(r.status<200||r.status>299)throw new Error(`Avi API ${r.status}: ${r.body.slice(0,180)}`);if(!r.body)return {ok:true};try{return JSON.parse(r.body)}catch{return {ok:true,response:r.body}}}
-const items=x=>x.results||x||[],refName=ref=>decodeURIComponent(String(ref||'').split('/').pop().split('#')[0]);
-let activeSegUuid='';
-const seState=se=>se.oper_status?.state||se.runtime?.oper_status?.state||se.status||se.state||'UNKNOWN';
-async function discover(){const [clouds,segs,vss,vsvips,pools,poolGroups,serviceEngines]=await Promise.all([avi('/cloud?page_size=100'),avi('/serviceenginegroup?page_size=100'),avi('/virtualservice?page_size=100'),avi('/vsvip?page_size=100'),avi('/pool?page_size=100'),avi('/poolgroup?page_size=100'),avi('/serviceengine?page_size=100')]);const cloud=items(clouds).find(x=>x.name===AVI.cloud);if(!cloud)throw new Error(`Cloud “${AVI.cloud}” was not found`);const seg=items(segs).find(x=>x.name===AVI.seg&&(!x.cloud_ref||refName(x.cloud_ref)===cloud.uuid));if(!seg)throw new Error(`SE Group “${AVI.seg}” was not found in “${AVI.cloud}”`);activeSegUuid=seg.uuid;const segEngines=items(serviceEngines).filter(se=>refName(se.se_group_ref)===seg.uuid);const vipByUuid=new Map(items(vsvips).map(x=>[x.uuid,x])),poolByUuid=new Map(items(pools).map(x=>[x.uuid,x])),groupByUuid=new Map(items(poolGroups).map(x=>[x.uuid,x]));const poolView=p=>({uuid:p.uuid,name:p.name,port:p.default_server_port||80,servers:(p.servers||[]).map((s,i)=>({name:s.hostname||s.vm_ref?.split('#').pop()||`Server ${i+1}`,ip:s.ip?.addr||'',port:s.port||p.default_server_port||80,enabled:s.enabled!==false}))});return {controller:AVI.host,apiVersion:AVI.version,demo:{autoResetSeconds:AUTO_RESET_SECONDS},cloud:{name:cloud.name,uuid:cloud.uuid},seg:{name:seg.name,uuid:seg.uuid,min:seg.min_scaleout_per_vs||2,max:seg.max_scaleout_per_vs||3,vcpus:seg.vcpus_per_se||1,memoryMb:seg.memory_per_se||2048,current:segEngines.length},virtualServices:items(vss).filter(v=>refName(v.cloud_ref)===cloud.uuid&&refName(v.se_group_ref)===seg.uuid).map(v=>{const vv=vipByUuid.get(refName(v.vsvip_ref))||{},direct=poolByUuid.get(refName(v.pool_ref)),group=groupByUuid.get(refName(v.pool_group_ref)),resolvedPools=direct?[direct]:(group?.members||[]).map(m=>poolByUuid.get(refName(m.pool_ref))).filter(Boolean);return {uuid:v.uuid,name:v.name,fqdn:vv.dns_info?.[0]?.fqdn||v.dns_info?.[0]?.fqdn||'',vip:vv.vip?.[0]?.ip_address?.addr||v.vip?.[0]?.ip_address?.addr||'',port:v.services?.[0]?.port||443,tls:!!v.services?.[0]?.enable_ssl,enabled:v.enabled!==false,pools:resolvedPools.map(poolView)}})}}
-const discoverBase=discover;discover=async function(){const result=await discoverBase();result.demo={...(result.demo||{}),scaleInQuietSeconds:SCALEIN_QUIET_SECONDS};return result};
-function lastMetric(payload,id){const list=payload.series||payload.metric_data||payload.results||[];const s=list.find(x=>(x.header?.name||x.name||x.metric_id)===id);const points=s?.data||s?.series||s?.values||[];const p=points.at?.(-1)||points[points.length-1];return +(p?.value??p?.[1]??s?.value??0)||0}
-async function live(uuid){const ids=['l4_client.max_open_conns','l4_client.avg_complete_conns','l4_client.avg_bandwidth','l4_client.avg_rx_pkts','l4_client.max_num_active_se'];const [p,sePayload]=await Promise.all([avi(`/virtualservice/${encodeURIComponent(uuid)}/placement/summary/`).catch(()=>({})),avi('/serviceengine?page_size=100')]);const groupEngines=items(sePayload).filter(se=>!activeSegUuid||refName(se.se_group_ref)===activeSegUuid).map(se=>({uuid:se.uuid,name:se.name||'Service Engine',status:seState(se)}));const placedIds=new Set();const walk=x=>{if(!x||typeof x!=='object')return;if(Array.isArray(x))return x.forEach(walk);const raw=x.se_uuid||x.serviceengine_uuid||x.se_ref||x.serviceengine_ref;if(raw)placedIds.add(refName(raw));Object.values(x).forEach(walk)};walk(p);let engines=groupEngines.filter(se=>placedIds.has(se.uuid));if(!engines.length&&placedIds.size)engines=[...placedIds].map(id=>({uuid:id,name:'Service Engine',status:'UP'}));const m=await avi(`/analytics/metrics/virtualservice/${encodeURIComponent(uuid)}?metric_id=${ids.join(',')}&limit=1&step=5`);const metricTargets=engines.length?engines:groupEngines.filter(se=>/UP|READY|IN_SERVICE/i.test(se.status));const seMetrics=await Promise.all(metricTargets.map(e=>avi(`/analytics/metrics/serviceengine/${encodeURIComponent(e.uuid)}?metric_id=se_stats.avg_cpu_usage&limit=1&step=5`).catch(()=>({}))));const cpuValues=seMetrics.map(x=>lastMetric(x,'se_stats.avg_cpu_usage')).filter(Number.isFinite);const cpu=cpuValues.length?cpuValues.reduce((sum,n)=>sum+n,0)/cpuValues.length:null;const metricCount=Math.round(lastMetric(m,ids[4]));const supportingCount=engines.length||metricCount;const provisioningEngines=groupEngines.filter(se=>!placedIds.has(se.uuid));return {connections:lastMetric(m,ids[0]),cps:lastMetric(m,ids[1]),bandwidth:lastMetric(m,ids[2]),pps:lastMetric(m,ids[3]),cpu,seCount:supportingCount,groupSeCount:groupEngines.length,engines,provisioningEngines,at:Date.now()}}
-const liveMetrics=live;
-const findCpu=x=>{if(!x||typeof x!=='object')return null;if(Number.isFinite(+x.avg_cpu_usage))return +x.avg_cpu_usage;for(const value of Object.values(x)){const found=findCpu(value);if(found!==null)return found}return null};
-live=async function(uuid){const result=await liveMetrics(uuid);if(Number.isFinite(result.cpu)&&result.cpu>0)return result;const values=(await Promise.all((result.engines||[]).filter(e=>e.uuid).map(e=>avi(`/analytics/healthscore/serviceengine/${encodeURIComponent(e.uuid)}?include_anomaly=false`).then(findCpu).catch(()=>null)))) .filter(Number.isFinite);result.cpu=values.length?values.reduce((sum,n)=>sum+n,0)/values.length:null;return result};
-const liveWithPlacementCpu=live;
-live=async function(uuid){const result=await liveWithPlacementCpu(uuid);if(Number.isFinite(result.cpu))return result;const payload=await avi('/serviceengine?page_size=100');const engines=items(payload).filter(se=>!activeSegUuid||refName(se.se_group_ref)===activeSegUuid);const values=(await Promise.all(engines.map(async se=>{const health=await avi(`/analytics/healthscore/serviceengine/${encodeURIComponent(se.uuid)}?include_anomaly=false`).catch(()=>null),healthCpu=findCpu(health);if(Number.isFinite(healthCpu))return healthCpu;const metrics=await avi(`/analytics/metrics/serviceengine/${encodeURIComponent(se.uuid)}?metric_id=se_stats.avg_cpu_usage,vm_stats.avg_cpu_usage&limit=1&step=5`).catch(()=>null);const seCpu=lastMetric(metrics||{},'se_stats.avg_cpu_usage'),vmCpu=lastMetric(metrics||{},'vm_stats.avg_cpu_usage');return seCpu||vmCpu||null}))).filter(Number.isFinite);result.cpu=values.length?values.reduce((sum,n)=>sum+n,0)/values.length:null;result.cpuEngineCount=values.length;return result};
-const liveWithCpu=live;
-live=async function(uuid){const result=await liveWithCpu(uuid),hasResolvedNames=(result.engines||[]).length&&result.engines.every(e=>e.name&&e.name!=='Service Engine');if(hasResolvedNames)return result;const [payload,vs]=await Promise.all([avi('/serviceengine?page_size=100'),avi(`/virtualservice/${encodeURIComponent(uuid)}`).catch(()=>({}))]),groupEngines=items(payload).filter(se=>!activeSegUuid||refName(se.se_group_ref)===activeSegUuid),needles=[uuid,vs.name].filter(Boolean);const placements=await Promise.all(groupEngines.map(se=>avi(`/serviceengine/${encodeURIComponent(se.uuid)}/placement/summary/`).catch(()=>({}))));let supporting=groupEngines.filter((se,i)=>{const text=JSON.stringify(placements[i]);return needles.some(value=>text.includes(value))});if(!supporting.length&&result.seCount)supporting=groupEngines.slice(0,result.seCount);if(supporting.length)result.engines=supporting.slice(0,result.seCount||supporting.length).map(se=>{const state=seState(se);return {uuid:se.uuid,name:se.name||'Service Engine',status:state==='UNKNOWN'?'active':state}});return result};
-function openOne(run){return new Promise(resolve=>{let done=false,settled=false;const finish=ok=>{if(!settled){settled=true;resolve(ok)}};const socket=run.tls?tls.connect({host:run.host,port:run.port,rejectUnauthorized:false},ready):net.connect({host:run.host,port:run.port},ready);function ready(){if(done)return;done=true;socket.setTimeout(0);socket.setKeepAlive(true,15000);run.sockets.add(socket);finish(true)}socket.setTimeout(8000,()=>{if(!done){done=true;run.failed++;socket.destroy();finish(false)}});socket.on('error',()=>{if(!done){done=true;run.failed++;finish(false)}});socket.on('close',()=>{run.sockets.delete(socket);if(!done){done=true;run.failed++;finish(false)}})})}
-function beginLoad(o){const id=Math.random().toString(36).slice(2),run={id,host:o.host,port:+o.port,tls:!!o.tls,http:o.protocol!=='tcp',path:o.path||'/',cps:Math.max(1,Math.min(+o.cps||100,1000)),max:Math.max(1,Math.min(+o.maxConnections||10000,50000)),sockets:new Set(),pending:0,attempted:0,failed:0,started:Date.now()};runs.set(id,run);run.timer=setInterval(()=>{let n=Math.min(run.cps,Math.max(0,run.max-run.sockets.size-run.pending));while(n-->0){run.attempted++;run.pending++;openOne(run).finally(()=>run.pending--)}},1000);return run}
-function stopRun(run){if(!run)return;clearInterval(run.timer);for(const s of run.sockets)s.destroy();run.sockets.clear();runs.delete(run.id)}
-async function scaleInVs(uuid){if(!uuid)throw new Error('Virtual Service UUID is required');console.log(`[scale-in] request received for Virtual Service ${uuid}`);try{const vs=await avi(`/virtualservice/${encodeURIComponent(uuid)}`);if(activeSegUuid&&refName(vs.se_group_ref)!==activeSegUuid)throw new Error(`Virtual Service is not assigned to ${AVI.seg}`);const vv=vs.vsvip_ref?await avi(`/vsvip/${encodeURIComponent(refName(vs.vsvip_ref))}`):vs,vipId=(vv.vip||vs.vip||[])[0]?.vip_id;if(!vipId)throw new Error('Avi did not return a vip_id for the selected Virtual Service');console.log(`[scale-in] submitting ${vs.name} (VIP ID ${vipId}) to Avi`);await aviPost(`/virtualservice/${encodeURIComponent(uuid)}/scalein`,{vip_id:vipId});console.log(`[scale-in] Avi accepted request for ${vs.name}`);return {ok:true,virtualService:vs.name,vipId}}catch(e){console.error(`[scale-in] request failed: ${e.message}`);throw e}}
-function staticFile(req,res){const rel=req.url==='/'?'index.html':decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '');const file=path.resolve(root,rel);if(!file.startsWith(root)||!fs.existsSync(file)||fs.statSync(file).isDirectory())return out(res,404,'Not found','text/plain');const types={'.html':'text/html','.css':'text/css','.js':'application/javascript'};out(res,200,fs.readFileSync(file),types[path.extname(file)]||'application/octet-stream')}
-const server=http.createServer(async(req,res)=>{try{if(req.url==='/api/health')return out(res,200,{status:'ok',controller:AVI.host,configured:!!AVI.pass,cloud:AVI.cloud,seg:AVI.seg});if(req.url==='/api/avi/discover')return out(res,200,await discover());if(req.url.startsWith('/api/avi/live/'))return out(res,200,await live(req.url.split('/').pop()));if(req.url==='/api/avi/scalein'&&req.method==='POST'){let body='';for await(const d of req)body+=d;const input=body?JSON.parse(body):{};if(!activeSegUuid)await discover();return out(res,200,await scaleInVs(input.uuid))}if(req.url==='/api/load/start'&&req.method==='POST'){let body='';for await(const d of req)body+=d;return out(res,200,{id:beginLoad(JSON.parse(body)).id})}if(req.url.startsWith('/api/load/status/')){const run=runs.get(req.url.split('/').pop());return run?out(res,200,{active:run.sockets.size,pending:run.pending,attempted:run.attempted,failed:run.failed,cps:run.cps,max:run.max,elapsed:Math.round((Date.now()-run.started)/1000)}):out(res,404,{error:'Load run not found'})}if(req.url.startsWith('/api/load/stop/')&&req.method==='POST'){stopRun(runs.get(req.url.split('/').pop()));return out(res,200,{ok:true})}staticFile(req,res)}catch(e){out(res,502,{error:e.message})}});
-server.listen(PORT,()=>console.log(`Avi live scale-out demo: http://localhost:${PORT}\nController: ${AVI.host} · Cloud: ${AVI.cloud} · SE Group: ${AVI.seg}`));
-process.on('SIGINT',()=>{for(const r of runs.values())stopRun(r);server.close(()=>process.exit())});
+const http = require("http"),
+  https = require("https"),
+  net = require("net"),
+  tls = require("tls"),
+  fs = require("fs"),
+  path = require("path");
+const PORT = +(process.env.PORT || 8080),
+  root = path.join(__dirname, "public");
+const AVI = {
+  host: process.env.AVI_CONTROLLER || "us-east-avi.demo.lab",
+  user: process.env.AVI_USERNAME || "admin",
+  pass: process.env.AVI_PASSWORD || "",
+  version: process.env.AVI_API_VERSION || "32.1.1",
+  cloud: process.env.AVI_CLOUD || "Demo NSX Cloud",
+  seg: process.env.AVI_SE_GROUP || "Scaleout-SEG",
+  insecure: process.env.AVI_TLS_VERIFY !== "true",
+};
+const AUTO_RESET_SECONDS = Math.max(0, +(process.env.AUTO_RESET_SECONDS || 30));
+const SCALEIN_QUIET_SECONDS = Math.max(
+  30,
+  +(process.env.SCALEIN_QUIET_SECONDS || 90),
+);
+const runs = new Map();
+const out = (res, status, data, type = "application/json") => {
+  res.writeHead(status, {
+    "Content-Type": type + "; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
+  res.end(type === "application/json" ? JSON.stringify(data) : data);
+};
+let aviCookie = "",
+  loginPromise;
+function requestAvi(url, method = "GET", body = "", headers = {}) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: AVI.host,
+        path: url,
+        method,
+        rejectUnauthorized: !AVI.insecure,
+        headers,
+      },
+      (r) => {
+        let data = "";
+        r.on("data", (d) => (data += d));
+        r.on("end", () =>
+          resolve({ status: r.statusCode, body: data, headers: r.headers }),
+        );
+      },
+    );
+    req.setTimeout(30000, () =>
+      req.destroy(new Error("Avi Controller request timed out")),
+    );
+    req.on("error", reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+async function login() {
+  if (!AVI.pass) throw new Error("AVI_PASSWORD is not set");
+  if (aviCookie) return;
+  if (loginPromise) return loginPromise;
+  loginPromise = (async () => {
+    const body = new URLSearchParams({
+        username: AVI.user,
+        password: AVI.pass,
+      }).toString(),
+      r = await requestAvi("/login", "POST", body, {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": Buffer.byteLength(body),
+        Referer: `https://${AVI.host}/`,
+      });
+    if (r.status < 200 || r.status > 299)
+      throw new Error(`Avi login ${r.status}: ${r.body.slice(0, 180)}`);
+    const cookies = r.headers["set-cookie"] || [];
+    aviCookie = cookies.map((x) => x.split(";")[0]).join("; ");
+    if (!/sessionid=/.test(aviCookie))
+      throw new Error(
+        "Avi login succeeded but no sessionid cookie was returned",
+      );
+  })().finally(() => (loginPromise = null));
+  return loginPromise;
+}
+async function avi(apiPath, retry = true) {
+  await login();
+  const r = await requestAvi("/api" + apiPath, "GET", "", {
+    Cookie: aviCookie,
+    "X-Avi-Version": AVI.version,
+    "X-Avi-Tenant": "admin",
+    Accept: "application/json",
+    "Accept-Encoding": "application/json",
+  });
+  if (r.status === 401 && retry) {
+    aviCookie = "";
+    return avi(apiPath, false);
+  }
+  if (r.status < 200 || r.status > 299)
+    throw new Error(`Avi API ${r.status}: ${r.body.slice(0, 180)}`);
+  try {
+    return JSON.parse(r.body);
+  } catch {
+    throw new Error(`Avi returned invalid JSON for ${apiPath}`);
+  }
+}
+async function aviPost(apiPath, payload = {}, retry = true) {
+  await login();
+  const body = JSON.stringify(payload),
+    csrf = decodeURIComponent(
+      (aviCookie.match(/(?:^|;\s*)csrftoken=([^;]+)/) || [])[1] || "",
+    );
+  const r = await requestAvi("/api" + apiPath, "POST", body, {
+    Cookie: aviCookie,
+    "X-CSRFToken": csrf,
+    "X-Avi-Version": AVI.version,
+    "X-Avi-Tenant": "admin",
+    "Content-Type": "application/json",
+    "Content-Length": Buffer.byteLength(body),
+    Referer: `https://${AVI.host}/`,
+  });
+  if (r.status === 401 && retry) {
+    aviCookie = "";
+    return aviPost(apiPath, payload, false);
+  }
+  if (r.status < 200 || r.status > 299)
+    throw new Error(`Avi API ${r.status}: ${r.body.slice(0, 180)}`);
+  if (!r.body) return { ok: true };
+  try {
+    return JSON.parse(r.body);
+  } catch {
+    return { ok: true, response: r.body };
+  }
+}
+const items = (x) => x.results || x || [],
+  refName = (ref) =>
+    decodeURIComponent(
+      String(ref || "")
+        .split("/")
+        .pop()
+        .split("#")[0],
+    );
+let activeSegUuid = "";
+const seState = (se) =>
+  se.oper_status?.state ||
+  se.runtime?.oper_status?.state ||
+  se.status ||
+  se.state ||
+  "UNKNOWN";
+async function discover() {
+  const [clouds, segs, vss, vsvips, pools, poolGroups, serviceEngines] =
+    await Promise.all([
+      avi("/cloud?page_size=100"),
+      avi("/serviceenginegroup?page_size=100"),
+      avi("/virtualservice?page_size=100"),
+      avi("/vsvip?page_size=100"),
+      avi("/pool?page_size=100"),
+      avi("/poolgroup?page_size=100"),
+      avi("/serviceengine?page_size=100"),
+    ]);
+  const cloud = items(clouds).find((x) => x.name === AVI.cloud);
+  if (!cloud) throw new Error(`Cloud “${AVI.cloud}” was not found`);
+  const seg = items(segs).find(
+    (x) =>
+      x.name === AVI.seg &&
+      (!x.cloud_ref || refName(x.cloud_ref) === cloud.uuid),
+  );
+  if (!seg)
+    throw new Error(`SE Group “${AVI.seg}” was not found in “${AVI.cloud}”`);
+  activeSegUuid = seg.uuid;
+  const segEngines = items(serviceEngines).filter(
+    (se) => refName(se.se_group_ref) === seg.uuid,
+  );
+  const vipByUuid = new Map(items(vsvips).map((x) => [x.uuid, x])),
+    poolByUuid = new Map(items(pools).map((x) => [x.uuid, x])),
+    groupByUuid = new Map(items(poolGroups).map((x) => [x.uuid, x]));
+  const poolView = (p) => ({
+    uuid: p.uuid,
+    name: p.name,
+    port: p.default_server_port || 80,
+    servers: (p.servers || []).map((s, i) => ({
+      name: s.hostname || s.vm_ref?.split("#").pop() || `Server ${i + 1}`,
+      ip: s.ip?.addr || "",
+      port: s.port || p.default_server_port || 80,
+      enabled: s.enabled !== false,
+    })),
+  });
+  return {
+    controller: AVI.host,
+    apiVersion: AVI.version,
+    demo: { autoResetSeconds: AUTO_RESET_SECONDS },
+    cloud: { name: cloud.name, uuid: cloud.uuid },
+    seg: {
+      name: seg.name,
+      uuid: seg.uuid,
+      min: seg.min_scaleout_per_vs || 2,
+      max: seg.max_scaleout_per_vs || 3,
+      vcpus: seg.vcpus_per_se || 1,
+      memoryMb: seg.memory_per_se || 2048,
+      current: segEngines.length,
+    },
+    virtualServices: items(vss)
+      .filter(
+        (v) =>
+          refName(v.cloud_ref) === cloud.uuid &&
+          refName(v.se_group_ref) === seg.uuid,
+      )
+      .map((v) => {
+        const vv = vipByUuid.get(refName(v.vsvip_ref)) || {},
+          direct = poolByUuid.get(refName(v.pool_ref)),
+          group = groupByUuid.get(refName(v.pool_group_ref)),
+          resolvedPools = direct
+            ? [direct]
+            : (group?.members || [])
+                .map((m) => poolByUuid.get(refName(m.pool_ref)))
+                .filter(Boolean);
+        return {
+          uuid: v.uuid,
+          name: v.name,
+          fqdn: vv.dns_info?.[0]?.fqdn || v.dns_info?.[0]?.fqdn || "",
+          vip:
+            vv.vip?.[0]?.ip_address?.addr || v.vip?.[0]?.ip_address?.addr || "",
+          port: v.services?.[0]?.port || 443,
+          tls: !!v.services?.[0]?.enable_ssl,
+          enabled: v.enabled !== false,
+          pools: resolvedPools.map(poolView),
+        };
+      }),
+  };
+}
+const discoverBase = discover;
+discover = async function () {
+  const result = await discoverBase();
+  result.demo = {
+    ...(result.demo || {}),
+    scaleInQuietSeconds: SCALEIN_QUIET_SECONDS,
+  };
+  return result;
+};
+function lastMetric(payload, id) {
+  const list = payload.series || payload.metric_data || payload.results || [];
+  const s = list.find((x) => (x.header?.name || x.name || x.metric_id) === id);
+  const points = s?.data || s?.series || s?.values || [];
+  const p = points.at?.(-1) || points[points.length - 1];
+  return +(p?.value ?? p?.[1] ?? s?.value ?? 0) || 0;
+}
+async function live(uuid) {
+  const ids = [
+    "l4_client.max_open_conns",
+    "l4_client.avg_complete_conns",
+    "l4_client.avg_bandwidth",
+    "l4_client.avg_rx_pkts",
+    "l4_client.max_num_active_se",
+  ];
+  const [p, sePayload] = await Promise.all([
+    avi(`/virtualservice/${encodeURIComponent(uuid)}/placement/summary/`).catch(
+      () => ({}),
+    ),
+    avi("/serviceengine?page_size=100"),
+  ]);
+  const groupEngines = items(sePayload)
+    .filter(
+      (se) => !activeSegUuid || refName(se.se_group_ref) === activeSegUuid,
+    )
+    .map((se) => ({
+      uuid: se.uuid,
+      name: se.name || "Service Engine",
+      status: seState(se),
+    }));
+  const placedIds = new Set();
+  const walk = (x) => {
+    if (!x || typeof x !== "object") return;
+    if (Array.isArray(x)) return x.forEach(walk);
+    const raw =
+      x.se_uuid || x.serviceengine_uuid || x.se_ref || x.serviceengine_ref;
+    if (raw) placedIds.add(refName(raw));
+    Object.values(x).forEach(walk);
+  };
+  walk(p);
+  let engines = groupEngines.filter((se) => placedIds.has(se.uuid));
+  if (!engines.length && placedIds.size)
+    engines = [...placedIds].map((id) => ({
+      uuid: id,
+      name: "Service Engine",
+      status: "UP",
+    }));
+  const m = await avi(
+    `/analytics/metrics/virtualservice/${encodeURIComponent(uuid)}?metric_id=${ids.join(",")}&limit=1&step=5`,
+  );
+  const metricTargets = engines.length
+    ? engines
+    : groupEngines.filter((se) => /UP|READY|IN_SERVICE/i.test(se.status));
+  const seMetrics = await Promise.all(
+    metricTargets.map((e) =>
+      avi(
+        `/analytics/metrics/serviceengine/${encodeURIComponent(e.uuid)}?metric_id=se_stats.avg_cpu_usage&limit=1&step=5`,
+      ).catch(() => ({})),
+    ),
+  );
+  const cpuValues = seMetrics
+    .map((x) => lastMetric(x, "se_stats.avg_cpu_usage"))
+    .filter(Number.isFinite);
+  const cpu = cpuValues.length
+    ? cpuValues.reduce((sum, n) => sum + n, 0) / cpuValues.length
+    : null;
+  const metricCount = Math.round(lastMetric(m, ids[4]));
+  const supportingCount = engines.length || metricCount;
+  const provisioningEngines = groupEngines.filter(
+    (se) => !placedIds.has(se.uuid),
+  );
+  return {
+    connections: lastMetric(m, ids[0]),
+    cps: lastMetric(m, ids[1]),
+    bandwidth: lastMetric(m, ids[2]),
+    pps: lastMetric(m, ids[3]),
+    cpu,
+    seCount: supportingCount,
+    groupSeCount: groupEngines.length,
+    engines,
+    provisioningEngines,
+    at: Date.now(),
+  };
+}
+const liveMetrics = live;
+const findCpu = (x) => {
+  if (!x || typeof x !== "object") return null;
+  if (Number.isFinite(+x.avg_cpu_usage)) return +x.avg_cpu_usage;
+  for (const value of Object.values(x)) {
+    const found = findCpu(value);
+    if (found !== null) return found;
+  }
+  return null;
+};
+live = async function (uuid) {
+  const result = await liveMetrics(uuid);
+  if (Number.isFinite(result.cpu) && result.cpu > 0) return result;
+  const values = (
+    await Promise.all(
+      (result.engines || [])
+        .filter((e) => e.uuid)
+        .map((e) =>
+          avi(
+            `/analytics/healthscore/serviceengine/${encodeURIComponent(e.uuid)}?include_anomaly=false`,
+          )
+            .then(findCpu)
+            .catch(() => null),
+        ),
+    )
+  ).filter(Number.isFinite);
+  result.cpu = values.length
+    ? values.reduce((sum, n) => sum + n, 0) / values.length
+    : null;
+  return result;
+};
+const liveWithPlacementCpu = live;
+live = async function (uuid) {
+  const result = await liveWithPlacementCpu(uuid);
+  if (Number.isFinite(result.cpu)) return result;
+  const payload = await avi("/serviceengine?page_size=100");
+  const engines = items(payload).filter(
+    (se) => !activeSegUuid || refName(se.se_group_ref) === activeSegUuid,
+  );
+  const values = (
+    await Promise.all(
+      engines.map(async (se) => {
+        const health = await avi(
+            `/analytics/healthscore/serviceengine/${encodeURIComponent(se.uuid)}?include_anomaly=false`,
+          ).catch(() => null),
+          healthCpu = findCpu(health);
+        if (Number.isFinite(healthCpu)) return healthCpu;
+        const metrics = await avi(
+          `/analytics/metrics/serviceengine/${encodeURIComponent(se.uuid)}?metric_id=se_stats.avg_cpu_usage,vm_stats.avg_cpu_usage&limit=1&step=5`,
+        ).catch(() => null);
+        const seCpu = lastMetric(metrics || {}, "se_stats.avg_cpu_usage"),
+          vmCpu = lastMetric(metrics || {}, "vm_stats.avg_cpu_usage");
+        return seCpu || vmCpu || null;
+      }),
+    )
+  ).filter(Number.isFinite);
+  result.cpu = values.length
+    ? values.reduce((sum, n) => sum + n, 0) / values.length
+    : null;
+  result.cpuEngineCount = values.length;
+  return result;
+};
+const liveWithCpu = live;
+live = async function (uuid) {
+  const result = await liveWithCpu(uuid),
+    hasResolvedNames =
+      (result.engines || []).length &&
+      result.engines.every((e) => e.name && e.name !== "Service Engine");
+  if (hasResolvedNames) return result;
+  const [payload, vs] = await Promise.all([
+      avi("/serviceengine?page_size=100"),
+      avi(`/virtualservice/${encodeURIComponent(uuid)}`).catch(() => ({})),
+    ]),
+    groupEngines = items(payload).filter(
+      (se) => !activeSegUuid || refName(se.se_group_ref) === activeSegUuid,
+    ),
+    needles = [uuid, vs.name].filter(Boolean);
+  const placements = await Promise.all(
+    groupEngines.map((se) =>
+      avi(
+        `/serviceengine/${encodeURIComponent(se.uuid)}/placement/summary/`,
+      ).catch(() => ({})),
+    ),
+  );
+  let supporting = groupEngines.filter((se, i) => {
+    const text = JSON.stringify(placements[i]);
+    return needles.some((value) => text.includes(value));
+  });
+  if (!supporting.length && result.seCount)
+    supporting = groupEngines.slice(0, result.seCount);
+  if (supporting.length)
+    result.engines = supporting
+      .slice(0, result.seCount || supporting.length)
+      .map((se) => {
+        const state = seState(se);
+        return {
+          uuid: se.uuid,
+          name: se.name || "Service Engine",
+          status: state === "UNKNOWN" ? "active" : state,
+        };
+      });
+  return result;
+};
+function openOne(run) {
+  return new Promise((resolve) => {
+    let done = false,
+      settled = false;
+    const finish = (ok) => {
+      if (!settled) {
+        settled = true;
+        resolve(ok);
+      }
+    };
+    const socket = run.tls
+      ? tls.connect(
+          { host: run.host, port: run.port, rejectUnauthorized: false },
+          ready,
+        )
+      : net.connect({ host: run.host, port: run.port }, ready);
+    function ready() {
+      if (done) return;
+      done = true;
+      socket.setTimeout(0);
+      socket.setKeepAlive(true, 15000);
+      run.sockets.add(socket);
+      finish(true);
+    }
+    socket.setTimeout(8000, () => {
+      if (!done) {
+        done = true;
+        run.failed++;
+        socket.destroy();
+        finish(false);
+      }
+    });
+    socket.on("error", () => {
+      if (!done) {
+        done = true;
+        run.failed++;
+        finish(false);
+      }
+    });
+    socket.on("close", () => {
+      run.sockets.delete(socket);
+      if (!done) {
+        done = true;
+        run.failed++;
+        finish(false);
+      }
+    });
+  });
+}
+function beginLoad(o) {
+  const id = Math.random().toString(36).slice(2),
+    run = {
+      id,
+      host: o.host,
+      port: +o.port,
+      tls: !!o.tls,
+      http: o.protocol !== "tcp",
+      path: o.path || "/",
+      cps: Math.max(1, Math.min(+o.cps || 100, 1000)),
+      max: Math.max(1, Math.min(+o.maxConnections || 10000, 50000)),
+      sockets: new Set(),
+      pending: 0,
+      attempted: 0,
+      failed: 0,
+      started: Date.now(),
+    };
+  runs.set(id, run);
+  run.timer = setInterval(() => {
+    let n = Math.min(
+      run.cps,
+      Math.max(0, run.max - run.sockets.size - run.pending),
+    );
+    while (n-- > 0) {
+      run.attempted++;
+      run.pending++;
+      openOne(run).finally(() => run.pending--);
+    }
+  }, 1000);
+  return run;
+}
+function stopRun(run) {
+  if (!run) return;
+  clearInterval(run.timer);
+  for (const s of run.sockets) s.destroy();
+  run.sockets.clear();
+  runs.delete(run.id);
+}
+async function scaleInVs(uuid) {
+  if (!uuid) throw new Error("Virtual Service UUID is required");
+  console.log(`[scale-in] request received for Virtual Service ${uuid}`);
+  try {
+    const vs = await avi(`/virtualservice/${encodeURIComponent(uuid)}`);
+    if (activeSegUuid && refName(vs.se_group_ref) !== activeSegUuid)
+      throw new Error(`Virtual Service is not assigned to ${AVI.seg}`);
+    const vv = vs.vsvip_ref
+        ? await avi(`/vsvip/${encodeURIComponent(refName(vs.vsvip_ref))}`)
+        : vs,
+      vipId = (vv.vip || vs.vip || [])[0]?.vip_id;
+    if (!vipId)
+      throw new Error(
+        "Avi did not return a vip_id for the selected Virtual Service",
+      );
+    console.log(`[scale-in] submitting ${vs.name} (VIP ID ${vipId}) to Avi`);
+    await aviPost(`/virtualservice/${encodeURIComponent(uuid)}/scalein`, {
+      vip_id: vipId,
+    });
+    console.log(`[scale-in] Avi accepted request for ${vs.name}`);
+    return { ok: true, virtualService: vs.name, vipId };
+  } catch (e) {
+    console.error(`[scale-in] request failed: ${e.message}`);
+    throw e;
+  }
+}
+function staticFile(req, res) {
+  const rel =
+    req.url === "/"
+      ? "index.html"
+      : decodeURIComponent(req.url.split("?")[0]).replace(/^\/+/, "");
+  const file = path.resolve(root, rel);
+  if (
+    !file.startsWith(root) ||
+    !fs.existsSync(file) ||
+    fs.statSync(file).isDirectory()
+  )
+    return out(res, 404, "Not found", "text/plain");
+  const types = {
+    ".html": "text/html",
+    ".css": "text/css",
+    ".js": "application/javascript",
+  };
+  out(
+    res,
+    200,
+    fs.readFileSync(file),
+    types[path.extname(file)] || "application/octet-stream",
+  );
+}
+const server = http.createServer(async (req, res) => {
+  try {
+    if (req.url === "/api/health")
+      return out(res, 200, {
+        status: "ok",
+        controller: AVI.host,
+        configured: !!AVI.pass,
+        cloud: AVI.cloud,
+        seg: AVI.seg,
+      });
+    if (req.url === "/api/avi/discover") return out(res, 200, await discover());
+    if (req.url.startsWith("/api/avi/live/"))
+      return out(res, 200, await live(req.url.split("/").pop()));
+    if (req.url === "/api/avi/scalein" && req.method === "POST") {
+      let body = "";
+      for await (const d of req) body += d;
+      const input = body ? JSON.parse(body) : {};
+      if (!activeSegUuid) await discover();
+      return out(res, 200, await scaleInVs(input.uuid));
+    }
+    if (req.url === "/api/load/start" && req.method === "POST") {
+      let body = "";
+      for await (const d of req) body += d;
+      return out(res, 200, { id: beginLoad(JSON.parse(body)).id });
+    }
+    if (req.url.startsWith("/api/load/status/")) {
+      const run = runs.get(req.url.split("/").pop());
+      return run
+        ? out(res, 200, {
+            active: run.sockets.size,
+            pending: run.pending,
+            attempted: run.attempted,
+            failed: run.failed,
+            cps: run.cps,
+            max: run.max,
+            elapsed: Math.round((Date.now() - run.started) / 1000),
+          })
+        : out(res, 404, { error: "Load run not found" });
+    }
+    if (req.url.startsWith("/api/load/stop/") && req.method === "POST") {
+      stopRun(runs.get(req.url.split("/").pop()));
+      return out(res, 200, { ok: true });
+    }
+    staticFile(req, res);
+  } catch (e) {
+    out(res, 502, { error: e.message });
+  }
+});
+server.listen(PORT, () =>
+  console.log(
+    `Avi live scale-out demo: http://localhost:${PORT}\nController: ${AVI.host} · Cloud: ${AVI.cloud} · SE Group: ${AVI.seg}`,
+  ),
+);
+process.on("SIGINT", () => {
+  for (const r of runs.values()) stopRun(r);
+  server.close(() => process.exit());
+});

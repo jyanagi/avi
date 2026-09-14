@@ -11,7 +11,7 @@ authorization, forged-token rejection, prompt-injection guardrails, and a positi
 security model. Every stage is mapped to
 both the OWASP API Security Top 10 (2023) and the OWASP MCP Top 10 (2025).
 
-This README describes a manual deployment across three Ubuntu 22.04 LTS servers:
+This README describes a manual deployment across three Ubuntu 22.04 LTS servers:node
 two backend servers that each run the MCP and LLM services, and one agent server
 that runs Keycloak, the demo tools, and the dashboard. It assumes you already
 have a working Avi Controller with a configured cloud, and that you will create
@@ -258,7 +258,7 @@ dashboard.
 ```
 sudo apt-get update
 sudo apt-get install -y python3 python3-venv openssl openjdk-17-jre unzip
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 

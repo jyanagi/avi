@@ -1,9 +1,126 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Avi Load Balancer · Live Elastic Scale-out</title><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/live.css"><link rel="stylesheet" href="/backend.css"><link rel="stylesheet" href="/backend-extra.css"></head>
-<body><header><div class="brand"><i></i><b>Avi Load Balancer</b><span>Live Elastic Scale-out</span></div><div class="health"><em id="controllerState">● Connecting</em><span>Demo NSX Cloud · Scaleout-SEG</span><button id="theme">◐ Theme</button></div></header>
-<main><section class="topology-panel"><div class="panel-title"><div><small>LIVE TRAFFIC PATH</small><h1>Connection pressure &amp; capacity</h1></div><span>● traffic &nbsp; <b>● healthy</b> &nbsp; <i>● provisioning</i></span></div>
-<div class="topology"><div class="grid"></div><svg viewBox="0 0 800 440" preserveAspectRatio="none" id="links"><line class="link active" x1="150" y1="220" x2="360" y2="220"/></svg><div class="threshold">Live Avi placement · max <b>3 Service Engines</b></div>
-<div class="node client">◉ <strong>Load generator</strong><small id="loadNode">idle</small></div><div class="node vip" id="vipNode" tabindex="0" aria-label="Selected Virtual Service details">◇ <strong id="vipLabel">Select a service</strong><small id="vipSub">Avi virtual service</small><mark>LIVE</mark></div><div id="seNodes"></div><div class="node pool-node off" id="poolNode" tabindex="0"><strong id="poolLabel">Backend pool</strong><small id="poolSub">No pool selected</small></div><div id="serverNodes"></div><div class="backends" id="segLabel">Scaleout-SEG · 2–3 SEs</div></div></section>
-<aside><div class="metrics"><div id="connMetric"><label>Open connections</label><b id="connections">1,240</b><small id="headroom">84% headroom</small></div><div><label>SE CPU</label><b id="cpu">28%</b><small>group average</small></div><div><label>Throughput</label><b id="throughput">82 Mbps</b><small>client → VIP</small></div><div><label>Packet rate</label><b id="pps">1.8k</b><small>packets / sec</small></div></div><div class="copy"><div><small id="kicker">PHASE 01</small><mark id="state">Ready</mark></div><h2 id="phaseTitle">Steady state on one Service Engine</h2><p id="outcome">SE-01 is healthy with ample connection headroom.</p></div><div class="console-wrap"><label>AVI EVENT STREAM <span id="streamState">waiting</span></label><pre id="console"><span class="success">00:00:00  Demo environment ready</span>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Avi Load Balancer · Live Elastic Scale-out</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/live.css" />
+    <link rel="stylesheet" href="/backend.css" />
+    <link rel="stylesheet" href="/backend-extra.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <i></i><b>Avi Load Balancer</b><span>Live Elastic Scale-out</span>
+      </div>
+      <div class="health">
+        <em id="controllerState">● Connecting</em
+        ><span>Demo NSX Cloud · Scaleout-SEG</span
+        ><button id="theme">◐ Theme</button>
+      </div>
+    </header>
+    <main>
+      <section class="topology-panel">
+        <div class="panel-title">
+          <div>
+            <small>LIVE TRAFFIC PATH</small>
+            <h1>Connection pressure &amp; capacity</h1>
+          </div>
+          <span
+            >● traffic &nbsp; <b>● healthy</b> &nbsp;
+            <i>● provisioning</i></span
+          >
+        </div>
+        <div class="topology">
+          <div class="grid"></div>
+          <svg viewBox="0 0 800 440" preserveAspectRatio="none" id="links">
+            <line class="link active" x1="150" y1="220" x2="360" y2="220" />
+          </svg>
+          <div class="threshold">
+            Live Avi placement · max <b>3 Service Engines</b>
+          </div>
+          <div class="node client">
+            ◉ <strong>Load generator</strong><small id="loadNode">idle</small>
+          </div>
+          <div
+            class="node vip"
+            id="vipNode"
+            tabindex="0"
+            aria-label="Selected Virtual Service details"
+          >
+            ◇ <strong id="vipLabel">Select a service</strong
+            ><small id="vipSub">Avi virtual service</small><mark>LIVE</mark>
+          </div>
+          <div id="seNodes"></div>
+          <div class="node pool-node off" id="poolNode" tabindex="0">
+            <strong id="poolLabel">Backend pool</strong
+            ><small id="poolSub">No pool selected</small>
+          </div>
+          <div id="serverNodes"></div>
+          <div class="backends" id="segLabel">Scaleout-SEG · 2–3 SEs</div>
+        </div>
+      </section>
+      <aside>
+        <div class="metrics">
+          <div id="connMetric">
+            <label>Open connections</label><b id="connections">1,240</b
+            ><small id="headroom">84% headroom</small>
+          </div>
+          <div>
+            <label>SE CPU</label><b id="cpu">28%</b><small>group average</small>
+          </div>
+          <div>
+            <label>Throughput</label><b id="throughput">82 Mbps</b
+            ><small>client → VIP</small>
+          </div>
+          <div>
+            <label>Packet rate</label><b id="pps">1.8k</b
+            ><small>packets / sec</small>
+          </div>
+        </div>
+        <div class="copy">
+          <div>
+            <small id="kicker">PHASE 01</small><mark id="state">Ready</mark>
+          </div>
+          <h2 id="phaseTitle">Steady state on one Service Engine</h2>
+          <p id="outcome">SE-01 is healthy with ample connection headroom.</p>
+        </div>
+        <div class="console-wrap">
+          <label>AVI EVENT STREAM <span id="streamState">waiting</span></label>
+          <pre
+            id="console"
+          ><span class="success">00:00:00  Demo environment ready</span>
 00:00:00  Press “Start scale test” to begin
-<span class="cursor"> </span></pre></div></aside></main>
-<footer><div class="controls"><select id="vs" aria-label="Virtual Service"><option>Loading Virtual Services…</option></select><input id="cps" type="number" min="1" max="1000" value="200" aria-label="Connections per second" title="Connections per second"><input id="max" type="number" min="1" max="50000" value="12000" aria-label="Maximum connections" title="Maximum held connections"><button class="primary" id="start" disabled>▶ Generate load</button><button id="reset">■ Stop</button></div><nav id="phases"></nav></footer><script src="/app.js"></script></body></html>
+<span class="cursor"> </span></pre>
+        </div>
+      </aside>
+    </main>
+    <footer>
+      <div class="controls">
+        <select id="vs" aria-label="Virtual Service">
+          <option>Loading Virtual Services…</option></select
+        ><input
+          id="cps"
+          type="number"
+          min="1"
+          max="400"
+          value="200"
+          aria-label="Connections per second"
+          title="Connections per second"
+        /><input
+          id="max"
+          type="number"
+          min="1"
+          max="1500"
+          value="1200"
+          aria-label="Maximum connections"
+          title="Maximum held connections"
+        /><button class="primary" id="start" disabled>▶ Generate load</button
+        ><button id="reset">■ Stop</button>
+      </div>
+      <nav id="phases"></nav>
+    </footer>
+    <script src="/app.js"></script>
+  </body>
+</html>

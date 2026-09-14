@@ -4,7 +4,7 @@ This project provides a live demonstration of Avi Load Balancer Virtual Service 
 
 ## Safety
 
-Use this application only against a lab Virtual Service that you are authorized to test. The generator creates real network connections. It is capped at 1,000 new connections per second and 50,000 held connections, but lower demonstration values are strongly recommended.
+Use this application only against a lab Virtual Service that you are authorized to test. The generator creates real network connections. It is capped at 500 new connections per second and 1,500 held connections, but lower demonstration values are strongly recommended.
 
 ## Requirements
 

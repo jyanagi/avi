@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avi Load Balancer &middot; WAAP for AI</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f1e26'/%3E%3Cpath d='M16 6 L26 16 L16 26 L6 16 Z' fill='none' stroke='%230072a3' stroke-width='3'/%3E%3Cpath d='M16 11 L21 16 L16 21 L11 16 Z' fill='%230072a3'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="/clr-ui.min.css" />
+<style>
+  /* ------------------------------------------------------------------
+     Clarity base design tokens. clr-ui.min.css ships the component
+     rules and --clr-* variables, but the underlying --cds-global-* /
+     --cds-alias-* token layer lives in @cds/core, which we don't bundle.
+     Without these, every color variable resolves empty and components
+     render unstyled. These are the official Clarity palette values for
+     the tokens this dashboard actually uses.
+     ------------------------------------------------------------------ */
+  :root {
+    --cds-global-color-cool-gray-1000:#21333b;
+    --cds-global-color-cool-gray-900:#25333d;
+    --cds-global-color-cool-gray-700:#495c68;
+    --cds-global-color-cool-gray-500:#8a9aa9;
+    --cds-global-color-cool-gray-200:#cbd6df;
+    --cds-global-color-cool-gray-100:#e3e9ec;
+    --cds-global-color-cool-gray-50:#f3f6f8;
+    --cds-alias-status-info:#0072a3;
+    --cds-alias-status-info-tint:#009cds;
+    --cds-alias-status-success:#318700;
+    --cds-alias-status-danger:#c21d00;
+    --cds-alias-status-warning:#c25400;
+    --cds-alias-object-interaction-background:#0072a3;
+    --clr-header-bg-color:#0f1e26;
+    --clr-header-font-color:#ffffff;
+    --clr-btn-primary-bg-color:#0072a3;
+    --clr-btn-primary-color:#ffffff;
+    --clr-btn-primary-border-color:#0072a3;
+    --clr-btn-default-color:#0072a3;
+    --clr-btn-default-border-color:#0072a3;
+    --clr-btn-border-radius:3px;
+    --clr-btn-border-width:1px;
+    /* typography tokens absent from bundled clr-ui; supply them so text
+       uses Metropolis (embedded in the CSS) instead of serif fallback */
+    --cds-alias-typography-font-weight-light:300;
+    --cds-alias-typography-font-weight-regular:400;
+    --cds-alias-typography-font-weight-semibold:600;
+    --cds-alias-typography-font-weight-bold:700;
+    --clr-body-font:"Metropolis","Avenir Next","Helvetica Neue",Arial,sans-serif;
+    --clr-display-font:"Metropolis","Avenir Next","Helvetica Neue",Arial,sans-serif;
+    --clr-font:"Metropolis","Avenir Next","Helvetica Neue",Arial,sans-serif;
+    --clr-font-mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  /* Force the Clarity font stack on everything, overriding UA serif */
+  html, body, button, input, select, textarea,
+  .header, .btn, .node-label, .node-sub {
+    font-family:"Metropolis","Avenir Next","Helvetica Neue",Arial,sans-serif;
+  }
+  /* Explicit button + header fallbacks so they render solid regardless
+     of how deep the Clarity token chain resolves. */
+  /* Flat, clean buttons - no bevel, gradient, or inset shadow */
+  .btn, .btn.btn-primary, .btn.btn-sm {
+    background:#0072a3; border:1px solid #0072a3; color:#fff;
+    border-radius:4px; box-shadow:none !important; text-shadow:none;
+    background-image:none !important; font-weight:600; letter-spacing:.01em;
+    padding:.35rem .85rem; font-size:.68rem; text-transform:none; height:auto;
+    line-height:1.2; min-width:0;
+  }
+  .btn:hover, .btn.btn-primary:hover { background:#005a82; border-color:#005a82; }
+  .btn:active { box-shadow:none !important; transform:none; }
+
+  .header.header-6 { background:#0f1e26 !important; color:#fff; align-items:center;
+    padding:0 1rem; height:3rem; flex:0 0 3rem; }
+  .header .branding { display:flex; align-items:center; height:100%; }
+  .header .title { color:#fff; font-size:.85rem; }
+  .header .header-nav { flex:1 1 auto; }
+  .theme-switch { display:inline-flex; align-items:center; gap:.4rem; cursor:pointer; user-select:none; }
+  .theme-switch .ts-label { color:#fff; font-size:.62rem; font-weight:600; letter-spacing:.02em; }
+  .theme-switch .ts-track {
+    position:relative; width:38px; height:20px; border-radius:20px;
+    background:rgba(255,255,255,.25); border:1px solid rgba(255,255,255,.45);
+    transition:background .18s ease;
+  }
+  .theme-switch .ts-thumb {
+    position:absolute; top:1px; left:1px; width:16px; height:16px; border-radius:50%;
+    background:#fff; transition:transform .18s ease;
+    display:flex; align-items:center; justify-content:center; font-size:9px; line-height:1;
+  }
+  body.dark .theme-switch .ts-track { background:rgba(127,192,240,.4); border-color:#5aa0e0; }
+  body.dark .theme-switch .ts-thumb { transform:translateX(18px); }
+  .theme-switch:focus-visible { outline:2px solid #7fd4ff; outline-offset:2px; border-radius:20px; }
+  .btn.btn-primary {
+    background:#0072a3; border-color:#0072a3; color:#fff;
+    border-radius:3px; padding:.15rem .7rem; font-weight:600;
+  }
+  .btn.btn-primary:hover { background:#005a82; border-color:#005a82; }
+  .btn.btn-sm { font-size:.55rem; min-width:0; }
+  :root {
+    --avi:#0072a3; --pass:#318700; --fail:#c21d00; --warn:#c25400;
+    --idle:#8a9aa9; --line:#cbd6df; --panel-bg:#ffffff; --graph-bg:#f5f8fa;
+  }
+  body.dark { --line:#35505f; --panel-bg:#21333b; --graph-bg:#1b2a31; }
+  /* Dark-mode text: Clarity's default text color is dark (set for light
+     backgrounds); when we swap panels to dark we must lighten the text too. */
+  body.dark { color:#e9eef2; }
+  body.dark .detail-head h2,
+  body.dark #dTitle,
+  body.dark .detail-body .explain,
+  body.dark .graph-head h2 { color:#e9eef2; }
+  body.dark .detail-head .outcome,
+  body.dark .graph-head .legend { color:#9fb3c0; }
+  body.dark .stage-chip .sc-name { color:#e9eef2; }
+  body.dark .stage-chip .sc-num { color:#9fb3c0; }
+  body.dark .verdict-badge.idle { color:#9fb3c0; }
+  body.dark .node-label { fill:#e9eef2; }
+  body.dark .node-sub { fill:#9fb3c0; }
+  html, body { height:100%; margin:0; overflow:hidden; }
+  body { display:flex; flex-direction:column; }
+
+  .header .branding .title { font-weight:600; letter-spacing:.01em; }
+  .header .health { display:flex; gap:.5rem; align-items:center; margin-right:.8rem; }
+  .pill { font-size:.6rem; padding:.15rem .55rem; border-radius:.7rem;
+    background:rgba(255,255,255,.12); color:#fff; white-space:nowrap; }
+  .pill.ok { background:rgba(120,220,120,.25); }
+  .pill.bad { background:rgba(255,140,120,.3); }
+
+  .stage-area { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:var(--split,1.35fr) 6px 1fr; }
+  .resizer {
+    background:var(--line); cursor:col-resize; position:relative;
+    transition:background .15s ease;
+  }
+  .resizer::before {
+    content:""; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:2px; height:28px; border-radius:2px; background:var(--idle); opacity:.5;
+  }
+  .resizer:hover, .resizer.dragging { background:var(--avi); }
+  .resizer:hover::before, .resizer.dragging::before { background:#fff; opacity:.9; }
+  body.dark .resizer:hover, body.dark .resizer.dragging { background:#5aa0e0; }
+  body.resizing { cursor:col-resize; user-select:none; }
+  .graph-col { background:var(--graph-bg); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; min-height:0; }
+  .graph-head { padding:.7rem 1rem .2rem; display:flex; justify-content:space-between; align-items:baseline; }
+  .graph-head h2 { font-size:.68rem; margin:0; font-weight:600; }
+  .graph-head .legend { font-size:.62rem; color:var(--idle); display:flex; gap:.9rem; }
+  .graph-head .legend span { display:inline-flex; align-items:center; gap:.3rem; }
+  .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .dot.a{background:var(--avi);} .dot.p{background:var(--pass);} .dot.f{background:var(--fail);}
+  .graph-wrap { flex:1 1 auto; min-height:0; padding:.3rem .6rem .6rem; }
+  svg.topology { width:100%; height:100%; display:block; }
+
+  .detail-col { background:var(--panel-bg); display:flex; flex-direction:column; min-height:0; }
+  .detail-head { padding:.8rem 1rem .5rem; border-bottom:1px solid var(--line); }
+  .detail-head .stage-no { font-size:.65rem; color:var(--avi); font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+  body.dark .detail-head .stage-no { color:#7fc0f0; }
+  .detail-head h2 { font-size:.8rem; margin:.15rem 0 0; }
+  .detail-head .outcome { font-size:.58rem; color:var(--idle); margin:.3rem 0 0; }
+  .detail-head .owasp-badges { display:flex; flex-wrap:wrap; gap:.3rem; margin:.5rem 0 0; }
+  .detail-head .owasp-badges .obadge {
+    font-size:.48rem; font-weight:600; letter-spacing:.02em;
+    padding:.15rem .5rem; border-radius:.7rem;
+    background:rgba(0,120,200,.1); color:var(--avi);
+    border:1px solid var(--avi);
+  }
+  .detail-head .owasp-badges .obadge.mcp {
+    background:rgba(0,150,120,.1); color:#00806a; border-color:#00806a;
+  }
+  body.dark .detail-head .owasp-badges .obadge {
+    background:rgba(90,170,235,.15); color:#7fc0f0; border-color:#5aa0e0;
+  }
+  body.dark .detail-head .owasp-badges .obadge.mcp {
+    background:rgba(60,200,165,.15); color:#5fe0c0; border-color:#3fc8a5;
+  }
+  .detail-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:.7rem 1rem; }
+  .detail-body .explain { font-size:.6rem; line-height:1.6; margin:0 0 .7rem; }
+  .detail-body .footnote {
+    font-size:.55rem; line-height:1.6; color:var(--idle); font-style:italic;
+    margin:.8rem 0 0; padding:.6rem 0 0; border-top:1px solid var(--line);
+  }
+  .detail-body .footnote::before { content:"Note  "; font-style:normal; font-weight:600; text-transform:uppercase; letter-spacing:.05em; font-size:.5rem; }
+  body.dark .detail-body .footnote { color:#9fb3c0; }
+  .detail-body .avi-controls {
+    margin:.7rem 0 0; padding:.6rem 0 0; border-top:1px solid var(--line);
+    display:flex; flex-wrap:wrap; align-items:center; gap:.3rem;
+  }
+  .detail-body .avi-controls .ac-label {
+    font-size:.5rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--avi); margin-right:.2rem;
+  }
+  .detail-body .avi-controls .ac-chip {
+    font-size:.5rem; font-weight:500; padding:.14rem .5rem; border-radius:.35rem;
+    background:transparent; color:var(--idle); border:1px solid var(--line);
+  }
+  body.dark .detail-body .avi-controls .ac-label { color:#7fc0f0; }
+  body.dark .detail-body .avi-controls .ac-chip { color:#c3d3df; border-color:#3a5766; }
+  .verdict-line { display:flex; align-items:center; gap:.5rem; margin:0 0 .6rem; }
+  .verdict-badge { font-size:.52rem; font-weight:600; padding:.18rem .6rem; border-radius:.7rem; border:1px solid currentColor; }
+  .verdict-badge.idle{color:var(--idle);} .verdict-badge.running{color:var(--avi);}
+  .verdict-badge.pass{color:#fff;background:var(--pass);border-color:var(--pass);}
+  .verdict-badge.fail{color:#fff;background:var(--fail);border-color:var(--fail);}
+
+  .console { background:#14232b; color:#d7e6ef; border-radius:4px; padding:.7rem .8rem;
+    font-family:var(--clr-font-mono,monospace); font-size:.68rem; line-height:1.6;
+    white-space:pre-wrap; word-break:break-word; min-height:4rem; }
+  .console .c-cmd{color:#7fd4ff;} .console .c-pass{color:#7ddc7d;font-weight:600;}
+  .console .c-action{color:#8fb8d8;font-weight:600;font-style:italic;}
+  .console .c-fail{color:#ff8f7a;font-weight:600;} .console .c-dim{color:#8aa3b0;}
+  .console.empty{color:#8aa3b0;}
+
+  .rail { flex:0 0 auto; border-top:1px solid var(--line); background:var(--panel-bg); display:flex; align-items:stretch; }
+  .rail-controls { flex:0 0 auto; display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; border-right:1px solid var(--line); }
+  .rail-scroll { flex:1 1 auto; display:flex; overflow-x:auto; }
+  .stage-chip { flex:1 0 auto; min-width:8.5rem; padding:.5rem .7rem; cursor:pointer;
+    border-right:1px solid var(--line); border-bottom:3px solid transparent;
+    display:flex; flex-direction:column; gap:.2rem; }
+  .stage-chip:hover { background:var(--graph-bg); }
+  .stage-chip.active { border-bottom-color:var(--avi); background:var(--graph-bg); }
+  .stage-chip .sc-top { display:flex; align-items:center; gap:.35rem; }
+  .stage-chip .sc-num { font-size:.48rem; color:var(--idle); font-weight:600; }
+  .stage-chip .sc-name { font-size:.55rem; font-weight:600; line-height:1.2; }
+  .stage-chip .sc-state { width:8px; height:8px; border-radius:50%; background:var(--idle); flex:0 0 auto; }
+  .stage-chip .sc-state.pass{background:var(--pass);} .stage-chip .sc-state.fail{background:var(--fail);}
+  .stage-chip .sc-state.running{background:var(--avi);animation:pulse 1s ease-in-out infinite;}
+  @keyframes pulse { 50%{opacity:.3;} }
+
+  .lnk { stroke:var(--line); stroke-width:2; fill:none; }
+  .lnk.active { stroke:var(--avi); stroke-width:3; }
+  .lnk.pass { stroke:var(--pass); } .lnk.fail { stroke:var(--fail); }
+  .pkt { opacity:0; } .pkt.go { opacity:1; }
+  .node-box { fill:var(--panel-bg); stroke:var(--line); stroke-width:1.5; }
+  .node-box.avi { stroke:var(--avi); stroke-width:2.5; }
+  .node-box.active { stroke:var(--avi); stroke-width:2.5; }
+  .node-box.pass { stroke:var(--pass); } .node-box.fail { stroke:var(--fail); }
+  .node-label { font-size:12px; font-weight:600; fill:#21333b; }
+  body.dark .node-label { fill:#e9eef2; }
+  .node-sub { font-size:8.5px; fill:var(--idle); }
+  .node-icon { font-size:15px; }
+</style>
+</head>
+<body>
+
+<header class="header header-6">
+  <div class="branding"><span class="title">Avi Load Balancer &middot; WAAP for AI</span></div>
+  <div class="header-nav"></div>
+  <div class="header-actions" style="display:flex;align-items:center;gap:.6rem;margin-left:auto;">
+    <div class="health" style="display:flex;gap:.4rem;align-items:center;">
+      <span class="pill" id="hTools">tools</span>
+      <span class="pill" id="hEnv">config</span>
+      <span class="pill" id="hTls">tls</span>
+    </div>
+    <div type="button" class="theme-switch" id="themeToggle" role="switch" tabindex="0" aria-checked="false" aria-label="Toggle dark mode">
+      <span class="ts-label">Light</span>
+      <span class="ts-track"><span class="ts-thumb"></span></span>
+      <span class="ts-label">Dark</span>
+    </div>
+  </div>
+</header>
+
+<div class="stage-area">
+  <div class="graph-col">
+    <div class="graph-head">
+      <h2>AI workflow &middot; live topology</h2>
+      <div class="legend">
+        <span><span class="dot a"></span>active</span>
+        <span><span class="dot p"></span>allowed</span>
+        <span><span class="dot f"></span>blocked</span>
+      </div>
+    </div>
+    <div class="graph-wrap">
+      <svg class="topology" viewBox="0 0 600 430" preserveAspectRatio="xMidYMid meet" id="topo">
+        <g id="links"></g>
+        <g id="packets"></g>
+        <g id="nodes"></g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize panels" tabindex="0"></div>
+
+  <div class="detail-col">
+    <div class="detail-head">
+      <div class="stage-no" id="dStageNo">Stage</div>
+      <h2 id="dTitle">Select a stage</h2>
+      <p class="outcome" id="dOutcome">Choose a stage below, or run the full demo.</p>
+      <div class="owasp-badges" id="dOwasp" style="display:none;"></div>
+    </div>
+    <div class="detail-body">
+      <div class="verdict-line">
+        <span class="verdict-badge idle" id="dBadge">Not run</span>
+        <button class="btn btn-primary btn-sm" id="dRun" style="margin:0;">Run stage</button>
+      </div>
+      <p class="explain" id="dExplain"></p>
+      <div class="console empty" id="dConsole">Output appears here when the stage runs.</div>
+      <p class="footnote" id="dFootnote" style="display:none;"></p>
+      <div class="avi-controls" id="dControls" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="rail">
+  <div class="rail-controls">
+    <button class="btn btn-sm btn-primary" id="guidedStart" style="margin:0;">Guided demo</button>
+    <button class="btn btn-sm" id="guidedNext" style="margin:0;display:none;background:#318700;border-color:#318700;">Next stage &rarr;</button>
+    <button class="btn btn-sm" id="runAll" style="margin:0;background:transparent;border:1px solid rgba(255,255,255,.5);color:var(--idle);">Auto-run all</button>
+  </div>
+  <div class="rail-scroll" id="rail"></div>
+</div>
+
+<script>
+const NODES = {
+  agent:    { x:75,  y:215, label:"Agent",     sub:"third-party / internal", icon:"\u25C9" },
+  keycloak: { x:290, y:72,  label:"Keycloak",  sub:"authorization server",   icon:"\u26BF" },
+  avi:      { x:290, y:215, label:"Avi",       sub:["AI/API gateway \u00b7 ADC","enforcement point"], icon:"\u25C8", avi:true },
+  mcp:      { x:495, y:140, label:"MCP node A",sub:"pool member \u00b7 no auth",icon:"\u2261" },
+  mcp2:     { x:495, y:285, label:"MCP node B",sub:"pool member \u00b7 no auth",icon:"\u2261" },
+  inference:{ x:495, y:360, label:"Inference", sub:"model \u00b7 no auth",   icon:"\u25A6" },
+};
+const LINKS = [["agent","avi"],["avi","keycloak"],["avi","mcp"],["avi","mcp2"],["avi","inference"]];
+const NW=118, NH=48;
+const SVGNS = "http://www.w3.org/2000/svg";
+function nodeCenter(id){ return {x:NODES[id].x, y:NODES[id].y}; }
+
+function drawTopology(){
+  const linksG=document.getElementById("links"), nodesG=document.getElementById("nodes");
+  linksG.innerHTML=""; nodesG.innerHTML="";
+  LINKS.forEach(([a,b])=>{
+    const p=edgePoints(a,b);
+    const line=document.createElementNS(SVGNS,"line");
+    line.setAttribute("x1",p.x1); line.setAttribute("y1",p.y1);
+    line.setAttribute("x2",p.x2); line.setAttribute("y2",p.y2);
+    line.setAttribute("class","lnk"); line.dataset.link=a+"-"+b;
+    linksG.appendChild(line);
+  });
+  for (const [id,n] of Object.entries(NODES)){
+    const g=document.createElementNS(SVGNS,"g");
+    const subLines = Array.isArray(n.sub) ? n.sub : [n.sub];
+    const extra = (subLines.length - 1) * 11;   // extra height per additional sub line
+    const boxH = NH + extra;
+    const rect=document.createElementNS(SVGNS,"rect");
+    rect.setAttribute("x",n.x-NW/2); rect.setAttribute("y",n.y-boxH/2);
+    rect.setAttribute("width",NW); rect.setAttribute("height",boxH); rect.setAttribute("rx",4);
+    rect.setAttribute("class","node-box"+(n.avi?" avi":"")); rect.dataset.node=id;
+    g.appendChild(rect);
+    const icon=document.createElementNS(SVGNS,"text");
+    icon.setAttribute("x",n.x-NW/2+13); icon.setAttribute("y",n.y-3-extra/2);
+    icon.setAttribute("class","node-icon"); icon.setAttribute("fill",n.avi?"var(--avi)":"var(--idle)");
+    icon.textContent=n.icon; g.appendChild(icon);
+    const label=document.createElementNS(SVGNS,"text");
+    label.setAttribute("x",n.x-NW/2+32); label.setAttribute("y",n.y-2-extra/2);
+    label.setAttribute("class","node-label"); label.textContent=n.label; g.appendChild(label);
+    const sub=document.createElementNS(SVGNS,"text");
+    sub.setAttribute("x",n.x-NW/2+13); sub.setAttribute("y",n.y+15-extra/2);
+    sub.setAttribute("class","node-sub");
+    subLines.forEach(function(line,i){
+      const ts=document.createElementNS(SVGNS,"tspan");
+      ts.textContent=line;
+      ts.setAttribute("x",n.x-NW/2+13);
+      if(i>0) ts.setAttribute("dy","11");
+      sub.appendChild(ts);
+    });
+    g.appendChild(sub);
+    nodesG.appendChild(g);
+  }
+}
+function nodeHeight(id){
+  const sub=NODES[id].sub;
+  const lines=Array.isArray(sub)?sub.length:1;
+  return NH + (lines-1)*11;
+}
+function edgePoints(a,b){
+  const A=nodeCenter(a), B=nodeCenter(b);
+  const shrink=(cx,cy,tx,ty,nh)=>{
+    const ang=Math.atan2(ty-cy,tx-cx);
+    const hx=Math.abs((NW/2)/(Math.cos(ang)||1e-9));
+    const hy=Math.abs((nh/2)/(Math.sin(ang)||1e-9));
+    const h=Math.min(hx,hy);
+    return {x:cx+Math.cos(ang)*h, y:cy+Math.sin(ang)*h};
+  };
+  const s=shrink(A.x,A.y,B.x,B.y,nodeHeight(a)), e=shrink(B.x,B.y,A.x,A.y,nodeHeight(b));
+  return {x1:s.x,y1:s.y,x2:e.x,y2:e.y};
+}
+function linkEl(a,b){ return document.querySelector(`[data-link="${a}-${b}"]`)||document.querySelector(`[data-link="${b}-${a}"]`); }
+function nodeEl(id){ return document.querySelector(`[data-node="${id}"]`); }
+function resetGraph(){
+  document.querySelectorAll(".lnk").forEach(l=>l.setAttribute("class","lnk"));
+  document.querySelectorAll(".node-box").forEach(n=>n.setAttribute("class","node-box"+(NODES[n.dataset.node].avi?" avi":"")));
+  document.getElementById("packets").innerHTML="";
+}
+function sendPacket(a,b){
+  return new Promise(res=>{
+    const p=edgePoints(a,b);
+    const c=document.createElementNS(SVGNS,"circle");
+    c.setAttribute("r",4.5); c.setAttribute("class","pkt go"); c.setAttribute("fill","var(--avi)");
+    document.getElementById("packets").appendChild(c);
+    const link=linkEl(a,b); if(link) link.classList.add("active");
+    const t0=performance.now(), dur=700;
+    (function step(t){
+      const k=Math.min(1,(t-t0)/dur);
+      c.setAttribute("cx",p.x1+(p.x2-p.x1)*k); c.setAttribute("cy",p.y1+(p.y2-p.y1)*k);
+      if(k<1) requestAnimationFrame(step); else { c.remove(); res(); }
+    })(t0);
+  });
+}
+async function animatePaths(paths){
+  resetGraph();
+  for (const [a,b] of (paths||[])){
+    const na=nodeEl(a); if(na) na.classList.add("active");
+    await sendPacket(a,b);
+    const nb=nodeEl(b); if(nb) nb.classList.add("active");
+  }
+}
+function animatePathsPreview(paths){
+  resetGraph();
+  (paths||[]).forEach(([a,b])=>{ const l=linkEl(a,b); if(l) l.classList.add("active"); });
+}
+function markGraphVerdict(node, passed, isAttack){
+  const nb=nodeEl(node);
+  const nodeCls = isAttack && passed ? "fail" : (passed ? "pass" : "fail");
+  if(nb) nb.classList.add(nodeCls);
+  const l=linkEl("agent","avi");
+  if(l) l.classList.add(isAttack && passed ? "fail" : (passed ? "pass":"fail"));
+}
+
+const themeToggle=document.getElementById("themeToggle");
+function applyTheme(m){
+  document.body.classList.toggle("dark",m==="dark");
+  themeToggle.setAttribute("aria-checked", m==="dark" ? "true":"false");
+  try{ localStorage.setItem("waap-theme",m); }catch(e){}
+  drawTopology(); if(current) selectStage(current,false);
+}
+function toggleTheme(){ applyTheme(document.body.classList.contains("dark")?"light":"dark"); }
+themeToggle.addEventListener("click",e=>{ e.preventDefault(); toggleTheme(); });
+themeToggle.addEventListener("keydown",e=>{
+  if(e.key===" "||e.key==="Enter"){ e.preventDefault(); toggleTheme(); }
+});
+
+// --- draggable split between topology and detail panels --------------------
+const resizer=document.getElementById("resizer");
+const stageArea=document.querySelector(".stage-area");
+const DEFAULT_SPLIT=1.35;           // matches the original 1.35fr : 1fr
+const MIN_FR=0.55, MAX_FR=3.2;      // clamp so neither panel collapses
+function applySplit(fr){
+  fr=Math.max(MIN_FR, Math.min(MAX_FR, fr));
+  stageArea.style.setProperty("--split", fr+"fr");
+  try{ localStorage.setItem("waap-split", String(fr)); }catch(e){}
+  // the topology is an SVG that scales to its container, so redraw to refit
+  if(typeof drawTopology==="function") drawTopology();
+}
+function frFromClientX(clientX){
+  const rect=stageArea.getBoundingClientRect();
+  const handle=6;                   // resizer width in px
+  const detailPx=rect.right-clientX;              // px for the (1fr) detail side
+  const graphPx=(clientX-rect.left)-handle/2;     // px for the graph side
+  if(detailPx<=0) return MAX_FR;
+  return graphPx/detailPx;          // ratio maps directly to Nfr : 1fr
+}
+let dragging=false;
+function startDrag(e){
+  dragging=true; resizer.classList.add("dragging");
+  document.body.classList.add("resizing");
+  e.preventDefault();
+}
+function moveDrag(e){
+  if(!dragging) return;
+  const x=(e.touches? e.touches[0].clientX : e.clientX);
+  applySplit(frFromClientX(x));
+}
+function endDrag(){
+  if(!dragging) return;
+  dragging=false; resizer.classList.remove("dragging");
+  document.body.classList.remove("resizing");
+}
+resizer.addEventListener("mousedown", startDrag);
+resizer.addEventListener("touchstart", startDrag, {passive:false});
+window.addEventListener("mousemove", moveDrag);
+window.addEventListener("touchmove", moveDrag, {passive:false});
+window.addEventListener("mouseup", endDrag);
+window.addEventListener("touchend", endDrag);
+// keyboard: left/right nudge, double-click resets
+resizer.addEventListener("keydown", e=>{
+  const cur=parseFloat(getComputedStyle(stageArea).getPropertyValue("--split"))||DEFAULT_SPLIT;
+  if(e.key==="ArrowLeft"){ e.preventDefault(); applySplit(cur-0.12); }
+  else if(e.key==="ArrowRight"){ e.preventDefault(); applySplit(cur+0.12); }
+  else if(e.key==="Home"){ e.preventDefault(); applySplit(DEFAULT_SPLIT); }
+});
+resizer.addEventListener("dblclick", ()=>applySplit(DEFAULT_SPLIT));
+// restore saved split on load
+try{
+  const saved=parseFloat(localStorage.getItem("waap-split"));
+  if(!isNaN(saved)) stageArea.style.setProperty("--split", saved+"fr");
+}catch(e){}
+
+async function preflight(){
+  try{
+    const h=await (await fetch("/api/health")).json();
+    pill("hTools",h.tools_found,"tools");
+    pill("hEnv",h.env_configured,"config");
+    pill("hTls",!h.insecure_tls,h.insecure_tls?"tls: insecure":"tls");
+  }catch(e){ pill("hTools",false,"server down"); }
+}
+function pill(id,ok,text){ const el=document.getElementById(id);
+  el.textContent=text; el.classList.toggle("ok",!!ok); el.classList.toggle("bad",!ok); }
+
+let scenes={}, ids=[], current=null, results={}, guidedIdx=-1;
+async function loadScenes(){
+  try {
+    const resp = await fetch("/api/scenes");
+    if (!resp.ok) throw new Error("scenes HTTP "+resp.status);
+    scenes = await resp.json();
+  } catch(e) {
+    document.getElementById("rail").innerHTML =
+      '<div style="padding:.7rem 1rem;font-size:.62rem;color:var(--fail);">Could not load stages from the server ('+e.message+'). Check the demo server is running and reachable.</div>';
+    document.getElementById("dTitle").textContent = "Server unavailable";
+    document.getElementById("dOutcome").textContent = "The dashboard loaded but could not reach /api/scenes on the demo server.";
+    return;
+  }
+  ids=Object.keys(scenes);
+  if (!ids.length){
+    document.getElementById("rail").innerHTML =
+      '<div style="padding:.7rem 1rem;font-size:.62rem;color:var(--warn);">No stages returned by the server.</div>';
+    return;
+  }
+  const rail=document.getElementById("rail"); rail.innerHTML="";
+  ids.forEach(id=>{
+    const s=scenes[id];
+    const chip=document.createElement("div");
+    chip.className="stage-chip"; chip.dataset.id=id;
+    const short=s.title.replace(/^\d+[a-z]?\s*-\s*/,"");
+    const num=(s.title.match(/^\d+[a-z]?/)||[""])[0];
+    chip.innerHTML=`<div class="sc-top"><span class="sc-state" id="state-${id}"></span><span class="sc-num">${num}</span></div><span class="sc-name">${short}</span>`;
+    chip.addEventListener("click",()=>selectStage(id));
+    rail.appendChild(chip);
+  });
+  selectStage(ids[0]);
+}
+function selectStage(id,animate=true){
+  current=id; const s=scenes[id];
+  // keep guided position in sync if the presenter jumps around manually
+  const gi = ids.indexOf(id);
+  if (gi >= 0) guidedIdx = gi;
+  document.querySelectorAll(".stage-chip").forEach(c=>c.classList.toggle("active",c.dataset.id===id));
+  document.getElementById("dStageNo").textContent="Stage "+(s.title.match(/^\d+[a-z]?/)||[""])[0];
+  document.getElementById("dTitle").textContent=s.title.replace(/^\d+[a-z]?\s*-\s*/,"");
+  document.getElementById("dOutcome").textContent=s.outcome;
+  const ow=document.getElementById("dOwasp");
+  const apiB=(s.owasp||[]).slice().sort();
+  const mcpB=(s.mcp||[]).slice().sort();
+  if(apiB.length || mcpB.length){
+    const api=apiB.map(function(o){return '<span class="obadge">'+o+'</span>';});
+    const mcp=mcpB.map(function(o){return '<span class="obadge mcp">'+o+'</span>';});
+    ow.innerHTML=api.concat(mcp).join("");
+    ow.style.display="flex";
+  } else { ow.style.display="none"; ow.innerHTML=""; }
+  document.getElementById("dExplain").textContent=s.explain;
+  const fn=document.getElementById("dFootnote");
+  if(s.caveat){ fn.textContent=s.caveat; fn.style.display=""; }
+  else { fn.textContent=""; fn.style.display="none"; }
+  const ctl=document.getElementById("dControls");
+  if(s.controls && s.controls.length){
+    ctl.innerHTML='<span class="ac-label">Avi controls</span>'+
+      s.controls.map(function(c){return '<span class="ac-chip">'+c+'</span>';}).join("");
+    ctl.style.display="flex";
+  } else { ctl.style.display="none"; ctl.innerHTML=""; }
+  const r=results[id], badge=document.getElementById("dBadge");
+  const isAttack=["attack","authz","psm"].includes(s.kind);
+  if(r){
+    setBadge(badge,r.passed?"pass":"fail",r.passed?(isAttack?"Blocked \u2713":"Passed \u2713"):"Check output");
+    const con=document.getElementById("dConsole"); con.className="console"; con.innerHTML=r.html;
+  } else {
+    setBadge(badge,"idle","Not run");
+    const con=document.getElementById("dConsole"); con.className="console empty";
+    con.textContent="Output appears here when the stage runs.";
+  }
+  if(animate) animatePathsPreview(s.paths);
+}
+document.getElementById("dRun").addEventListener("click",()=>runStage(current));
+function runStage(id){
+  return new Promise(resolve=>{
+    const s=scenes[id];
+    const isAttack=["attack","authz","psm"].includes(s.kind);
+    const badge=document.getElementById("dBadge"), con=document.getElementById("dConsole");
+    con.className="console"; con.innerHTML="";
+    setBadge(badge,"running","Running");
+    document.getElementById("state-"+id).className="sc-state running";
+    animatePaths(s.paths);
+    const es=new EventSource(`/api/run/${id}`);
+    const line=html=>{ con.innerHTML+=html+"\n"; con.scrollTop=con.scrollHeight; };
+    // State for collapsing Avi's multi-line HTML 403 block page into one line.
+    let inBlockPage=false, blockShown=false;
+    es.addEventListener("cmd",e=>{ inBlockPage=false; blockShown=false;
+      const d=JSON.parse(e.data); const label=d.label||"";
+      if(label) line(`<span class="c-action">\u25B8 ${esc(label)}</span>`); });
+    es.addEventListener("line",e=>{
+      const t=JSON.parse(e.data).text;
+      // Detect the start of Avi's HTML error page and collapse it.
+      if(/^\s*<!DOCTYPE|^\s*<html/i.test(t)) inBlockPage=true;
+      if(inBlockPage){
+        if(!blockShown){
+          line(`<span class="c-fail">&#9209; Blocked by Avi \u2014 403 error page returned (WAF / positive security).</span>`);
+          blockShown=true;
+        }
+        if(/<\/html>/i.test(t)) inBlockPage=false;
+        return; // swallow the rest of the HTML
+      }
+      let cls="";
+      if(/PASS|HTTP 200|allowed|servedBy/i.test(t)) cls="c-pass";
+      if(/FAIL|HTTP 403|HTTP 401|blocked|denied|unexpected/i.test(t)) cls="c-fail";
+      line(cls?`<span class="${cls}">${esc(t)}</span>`:esc(t));
+    });
+    es.addEventListener("cmd_done",e=>{ /* exit code suppressed for demo cleanliness */ });
+    es.addEventListener("verdict",e=>{
+      const d=JSON.parse(e.data);
+      results[id]={passed:d.passed,html:con.innerHTML};
+      setBadge(badge,d.passed?"pass":"fail",d.passed?(isAttack?"Blocked \u2713":"Passed \u2713"):"Check output");
+      document.getElementById("state-"+id).className="sc-state "+(d.passed?"pass":"fail");
+      markGraphVerdict(s.verdict_node||"avi",d.passed,isAttack);
+    });
+    es.addEventListener("end",()=>{ es.close(); resolve(); });
+    es.onerror=()=>{ es.close(); setBadge(badge,"fail","Connection lost");
+      document.getElementById("state-"+id).className="sc-state fail"; resolve(); };
+  });
+}
+function setBadge(el,cls,txt){ el.className="verdict-badge "+cls; el.textContent=txt; }
+function esc(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// Guided mode: run one stage at a time, wait for the presenter to advance.
+const guidedStart = document.getElementById("guidedStart");
+const guidedNext  = document.getElementById("guidedNext");
+
+async function guidedRunAt(i){
+  guidedIdx = i;
+  const id = ids[i];
+  selectStage(id, false);
+  guidedStart.disabled = true; guidedNext.disabled = true;
+  await runStage(id);
+  guidedStart.disabled = false; guidedNext.disabled = false;
+  // offer the next step, or finish
+  if (i < ids.length - 1){
+    guidedNext.style.display = "";
+    guidedNext.textContent = "Next stage \u2192";
+    guidedStart.textContent = "Restart guided";
+  } else {
+    guidedNext.style.display = "none";
+    guidedStart.textContent = "Restart guided";
+  }
+}
+
+guidedStart.addEventListener("click", () => { guidedRunAt(0); });
+guidedNext.addEventListener("click", () => {
+  if (guidedIdx < ids.length - 1) guidedRunAt(guidedIdx + 1);
+});
+
+// Auto-run all: hands-off flythrough, no pauses between stages.
+document.getElementById("runAll").addEventListener("click",async()=>{
+  const btn=document.getElementById("runAll"); btn.disabled=true;
+  guidedStart.disabled=true; guidedNext.disabled=true; guidedNext.style.display="none";
+  for(const id of ids){ selectStage(id,false); await runStage(id); await wait(500); }
+  btn.disabled=false; guidedStart.disabled=false;
+});
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+(async function(){
+  try {
+    let saved=null; try{ saved=localStorage.getItem("waap-theme"); }catch(e){}
+    document.body.classList.toggle("dark",saved==="dark");
+    themeToggle.setAttribute("aria-checked", saved==="dark" ? "true":"false");
+    drawTopology(); await preflight(); await loadScenes();
+  } catch(e) {
+    const rail=document.getElementById("rail");
+    if (rail) rail.innerHTML='<div style="padding:.7rem 1rem;font-size:.62rem;color:var(--fail);">Startup error: '+e.message+'</div>';
+    console.error("boot error", e);
+  }
+})();
+</script>
+</body>
+</html>

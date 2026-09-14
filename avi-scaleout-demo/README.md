@@ -1,5 +1,7 @@
 # Avi Live Elastic Scale-out Demo
 
+<img src="images/scaleout-dashboard.png" alt="Avi Scaleout Demo Dashboard" width="100%"/>
+
 This project provides a live demonstration of Avi Load Balancer Virtual Service scale-out and scale-in. It is not a simulation. The application discovers Virtual Services in a configured Avi cloud and Service Engine Group, reads live analytics and placement data, generates sustained TCP connections against the selected VIP, and displays topology and phase changes in a presenter-friendly web interface.
 
 ## Safety

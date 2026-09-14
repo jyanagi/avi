@@ -550,11 +550,9 @@ Then open the dashboard at https://AGENT_HOST:8700/ and run the stages.
 ## Running the demo
 
 Open the dashboard and use Guided demo to step through the stages, or Auto-run
-all for a hands-off pass. The presenter script under docs/DEMO-SCRIPT.docx and
-docs/DEMO-SCRIPT.md provides word-for-word talk tracks, mouse directions, and
-timing. The dashboard shows, per stage, the OWASP API and MCP mappings and the
-Avi controls that enforce it. You can drag the divider between the topology and
-detail panels, and toggle light and dark mode in the header.
+all for a hands-off pass. The dashboard shows, per stage, the OWASP API and MCP 
+mappings and the Avi controls that enforce it. You can drag the divider between 
+the topology and detail panels, and toggle light and dark mode in the header.
 
 
 ## Troubleshooting, from real deployment experience

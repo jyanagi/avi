@@ -1,12 +1,14 @@
 # Avi WAAP for AI / MCP Demo Kit
 
+<img src="images/dashboard.png" alt="Avi WAAP for AI Demo Dashboard" width="100%"/>
+
 This kit stands up a working "WAAP for AI" demonstration in which VMware Avi Load
 Balancer acts as the single security enforcement point in front of unauthenticated
 AI backends. It protects two Model Context Protocol (MCP) tool servers and an
 OpenAI-compatible inference (LLM) service, and drives an interactive dashboard
 that walks through mutual TLS, agent onboarding, least-privilege JWT
-authorization, forged-token rejection, prompt-injection guardrails, a positive
-security model, and session resilience under failover. Every stage is mapped to
+authorization, forged-token rejection, prompt-injection guardrails, and a positive
+security model. Every stage is mapped to
 both the OWASP API Security Top 10 (2023) and the OWASP MCP Top 10 (2025).
 
 This README describes a manual deployment across three Ubuntu 22.04 LTS servers:
@@ -36,7 +38,7 @@ Two virtual services are created on Avi:
 - Inference virtual service, fronting the two acme-llm backends on 9443
 
 Both require a client certificate (mutual TLS) and a valid Keycloak JWT. The
-backends themselves have no authentication. Avi is the only thing protecting them.
+backends themselves have no authentication. **Avi is the only thing protecting them.**
 
 
 ## Server roles and naming
@@ -125,7 +127,7 @@ node name.
 If Node 18+ is not already present:
 
 ```
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt-get install -y nodejs
 node --version
 ```

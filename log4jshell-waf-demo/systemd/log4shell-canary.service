@@ -1,0 +1,14 @@
+[Unit]
+Description=Log4Shell demo JNDI canary listener (observe-only, no payload served)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/log4shell-demo.env
+ExecStart=/usr/bin/python3 /opt/log4shell-demo/canary-listener.py
+Restart=always
+RestartSec=2
+User=root
+
+[Install]
+WantedBy=multi-user.target

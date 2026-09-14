@@ -1,0 +1,27 @@
+#cloud-config
+# Fresh-provision layer for web-a-03b (second vulnerable node only).
+hostname: web-a-03b
+fqdn: web-a-03b.demo.lab
+package_update: true
+packages: [curl, docker.io, nodejs]
+write_files:
+  - path: /etc/netplan/60-demo.yaml
+    permissions: '0600'
+    content: |
+      network:
+        version: 2
+        ethernets:
+          ens160:
+            addresses: [10.15.148.85/24]
+            routes:
+              - to: default
+                via: 10.15.148.1
+            nameservers:
+              addresses: [10.15.148.1]
+              search: [demo.lab]
+runcmd:
+  - netplan apply
+  - systemctl enable --now docker
+  # Copy the package to /root/log4shell-waf-demo, then:
+  #   cd /root/log4shell-waf-demo && sudo ./install/install-vuln-node.sh
+  - echo "OS ready. Run install-vuln-node.sh only." > /root/NEXT-STEPS.txt

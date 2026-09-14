@@ -1,0 +1,14 @@
+[Unit]
+Description=Log4Shell demo operator console + fire API
+After=network-online.target log4shell-canary.service
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/log4shell-demo.env
+ExecStart=/usr/bin/node /opt/log4shell-demo/console-server.js
+Restart=always
+RestartSec=2
+User=root
+
+[Install]
+WantedBy=multi-user.target

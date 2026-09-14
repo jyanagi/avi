@@ -1,0 +1,31 @@
+#cloud-config
+# Fresh-provision layer for web-a-03a (control plane + vulnerable node).
+# OS prep only: hostname, static IP, prerequisites. The application layer is
+# installed by running the package installers (see runcmd note below).
+hostname: web-a-03a
+fqdn: web-a-03a.demo.lab
+package_update: true
+packages: [curl, python3, docker.io, nodejs]
+write_files:
+  - path: /etc/netplan/60-demo.yaml
+    permissions: '0600'
+    content: |
+      network:
+        version: 2
+        ethernets:
+          ens160:
+            addresses: [10.15.148.84/24]
+            routes:
+              - to: default
+                via: 10.15.148.1
+            nameservers:
+              addresses: [10.15.148.1]
+              search: [demo.lab]
+runcmd:
+  - netplan apply
+  - systemctl enable --now docker
+  # Copy the package to /root/log4shell-waf-demo (scp or a lab share), then:
+  #   cd /root/log4shell-waf-demo
+  #   sudo ./install/install-vuln-node.sh
+  #   sudo ./install/install-control-plane.sh
+  - echo "OS ready. Run install-vuln-node.sh then install-control-plane.sh" > /root/NEXT-STEPS.txt

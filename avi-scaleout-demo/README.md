@@ -31,8 +31,6 @@ The project has no external npm dependencies.
 | `AUTO_RESET_SECONDS` | `30` | Stabilization time before load is released |
 | `SCALEIN_QUIET_SECONDS` | `90` | Quiet period before scale-in, minimum 30 seconds |
 
-Never commit a file containing the real Avi password.
-
 ## Local run
 
 PowerShell:

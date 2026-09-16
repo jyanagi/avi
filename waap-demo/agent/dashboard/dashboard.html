@@ -168,7 +168,10 @@
   body.dark .detail-head .owasp-badges .obadge.mcp {
     background:rgba(60,200,165,.15); color:#5fe0c0; border-color:#3fc8a5;
   }
-  .detail-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:.7rem 1rem; }
+  .detail-body { flex:1 1 auto; min-height:0; overflow:hidden; padding:.7rem 1rem;
+    display:flex; flex-direction:column; }
+  .detail-fixed-top { flex:0 0 auto; }
+  .detail-fixed-bottom { flex:0 0 auto; }
   .detail-body .explain { font-size:.6rem; line-height:1.6; margin:0 0 .7rem; }
   .detail-body .footnote {
     font-size:.55rem; line-height:1.6; color:var(--idle); font-style:italic;
@@ -198,9 +201,11 @@
 
   .console { background:#14232b; color:#d7e6ef; border-radius:4px; padding:.7rem .8rem;
     font-family:var(--clr-font-mono,monospace); font-size:.68rem; line-height:1.6;
-    white-space:pre-wrap; word-break:break-word; min-height:4rem; }
+    white-space:pre-wrap; word-break:break-word;
+    flex:1 1 auto; min-height:6rem; overflow-y:auto; margin:0; }
   .console .c-cmd{color:#7fd4ff;} .console .c-pass{color:#7ddc7d;font-weight:600;}
   .console .c-action{color:#8fb8d8;font-weight:600;font-style:italic;}
+  .console .c-json{color:#b8d0e0;}
   .console .c-fail{color:#ff8f7a;font-weight:600;} .console .c-dim{color:#8aa3b0;}
   .console.empty{color:#8aa3b0;}
 
@@ -282,14 +287,18 @@
       <div class="owasp-badges" id="dOwasp" style="display:none;"></div>
     </div>
     <div class="detail-body">
-      <div class="verdict-line">
-        <span class="verdict-badge idle" id="dBadge">Not run</span>
-        <button class="btn btn-primary btn-sm" id="dRun" style="margin:0;">Run stage</button>
+      <div class="detail-fixed-top">
+        <div class="verdict-line">
+          <span class="verdict-badge idle" id="dBadge">Not run</span>
+          <button class="btn btn-primary btn-sm" id="dRun" style="margin:0;">Run stage</button>
+        </div>
+        <p class="explain" id="dExplain"></p>
       </div>
-      <p class="explain" id="dExplain"></p>
       <div class="console empty" id="dConsole">Output appears here when the stage runs.</div>
-      <p class="footnote" id="dFootnote" style="display:none;"></p>
-      <div class="avi-controls" id="dControls" style="display:none;"></div>
+      <div class="detail-fixed-bottom">
+        <p class="footnote" id="dFootnote" style="display:none;"></p>
+        <div class="avi-controls" id="dControls" style="display:none;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -306,7 +315,7 @@
 <script>
 const NODES = {
   agent:    { x:75,  y:215, label:"Agent",     sub:"third-party / internal", icon:"\u25C9" },
-  keycloak: { x:290, y:72,  label:"Keycloak",  sub:"authorization server",   icon:"\u26BF" },
+  keycloak: { x:290, y:72,  label:"ID Provider",  sub:"authorization server",   icon:"\u26BF" },
   avi:      { x:290, y:215, label:"Avi",       sub:["AI/API gateway \u00b7 ADC","enforcement point"], icon:"\u25C8", avi:true },
   mcp:      { x:495, y:140, label:"MCP node A",sub:"pool member \u00b7 no auth",icon:"\u2261" },
   mcp2:     { x:495, y:285, label:"MCP node B",sub:"pool member \u00b7 no auth",icon:"\u2261" },
@@ -583,10 +592,13 @@ function runStage(id){
     const es=new EventSource(`/api/run/${id}`);
     const line=html=>{ con.innerHTML+=html+"\n"; con.scrollTop=con.scrollHeight; };
     // State for collapsing Avi's multi-line HTML 403 block page into one line.
-    let inBlockPage=false, blockShown=false;
+    let inBlockPage=false, blockShown=false, inReq=false;
     es.addEventListener("cmd",e=>{ inBlockPage=false; blockShown=false;
       const d=JSON.parse(e.data); const label=d.label||"";
-      if(label) line(`<span class="c-action">\u25B8 ${esc(label)}</span>`); });
+      if(label) line(`<span class="c-action">\u25B8 ${esc(label)}</span>`);
+      // The tools echo their own real curl requests, so we no longer show a
+      // synthetic clean command here (that would duplicate the request line).
+    });
     es.addEventListener("line",e=>{
       const t=JSON.parse(e.data).text;
       // Detect the start of Avi's HTML error page and collapse it.
@@ -599,6 +611,16 @@ function runStage(id){
         if(/<\/html>/i.test(t)) inBlockPage=false;
         return; // swallow the rest of the HTML
       }
+      // Pretty-print JSON output lines, unwrapping any escaped inner JSON
+      // (e.g. an MCP result whose content[].text is itself a JSON string).
+      const pretty=prettyJsonLine(t);
+      if(pretty!==null){ line(`<span class="c-json">${esc(pretty)}</span>`); return; }
+      // Tool-echoed real request lines: "  $ curl ..." and its wrapped
+      // continuation lines. Render them as command lines (blue) so the audience
+      // sees the actual request going to Avi, distinct from the response.
+      if(/^\s*\$\s/.test(t)){ inReq=true; line(`<span class="c-cmd">${esc(t)}</span>`); return; }
+      if(inReq && /^\s{6}\S/.test(t)){ line(`<span class="c-cmd">${esc(t)}</span>`); return; }
+      inReq=false;
       let cls="";
       if(/PASS|HTTP 200|allowed|servedBy/i.test(t)) cls="c-pass";
       if(/FAIL|HTTP 403|HTTP 401|blocked|denied|unexpected/i.test(t)) cls="c-fail";
@@ -619,6 +641,30 @@ function runStage(id){
 }
 function setBadge(el,cls,txt){ el.className="verdict-badge "+cls; el.textContent=txt; }
 function esc(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Recursively unwrap any string value that is itself valid JSON (e.g. an MCP
+// result's content[].text holding a stringified object), so nested \" and \n
+// disappear and the real structure shows.
+function deepUnwrap(v){
+  if(typeof v==="string"){
+    const s=v.trim();
+    if((s.startsWith("{")&&s.endsWith("}"))||(s.startsWith("[")&&s.endsWith("]"))){
+      try{ return deepUnwrap(JSON.parse(s)); }catch(e){ return v; }
+    }
+    return v;
+  }
+  if(Array.isArray(v)) return v.map(deepUnwrap);
+  if(v&&typeof v==="object"){
+    const o={}; for(const k in v) o[k]=deepUnwrap(v[k]); return o;
+  }
+  return v;
+}
+// If a line is a JSON object/array, return it pretty-printed (with inner JSON
+// unwrapped). Otherwise return null so the caller renders the line normally.
+function prettyJsonLine(t){
+  const s=t.trim();
+  if(!((s.startsWith("{")&&s.endsWith("}"))||(s.startsWith("[")&&s.endsWith("]")))) return null;
+  try{ return JSON.stringify(deepUnwrap(JSON.parse(s)),null,2); }catch(e){ return null; }
+}
 
 // Guided mode: run one stage at a time, wait for the presenter to advance.
 const guidedStart = document.getElementById("guidedStart");

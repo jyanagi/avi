@@ -77,7 +77,69 @@ def _b64url(obj):
     return base64.urlsafe_b64encode(raw).rstrip(b'=').decode()
 
 
+def _truncate_token(val):
+    parts = val.split(' ', 1)
+    if len(parts) == 2 and len(parts[1]) > 40:
+        t = parts[1]
+        return parts[0] + ' ' + t[:22] + '...' + t[-6:]
+    return val
+
+
+SHOW_REQUESTS = os.environ.get('SHOW_REQUESTS', '1') != '0'
+
+
+def _mask_secrets(body):
+    """Replace secret values in a request body with *** for display only."""
+    SECRET_KEYS = ('client_secret', 'password')
+    out = body
+    for key in SECRET_KEYS:
+        marker = key + '='
+        i = out.find(marker)
+        while i != -1:
+            start = i + len(marker)
+            end = out.find('&', start)
+            if end == -1:
+                end = len(out)
+            out = out[:start] + '***' + out[end:]
+            i = out.find(marker, start + 3)
+        jmarker = '"' + key + '"'
+        j = out.find(jmarker)
+        while j != -1:
+            colon = out.find(':', j + len(jmarker))
+            q1 = out.find('"', colon + 1) if colon != -1 else -1
+            q2 = out.find('"', q1 + 1) if q1 != -1 else -1
+            if q1 != -1 and q2 != -1:
+                out = out[:q1 + 1] + '***' + out[q2:]
+            j = out.find(jmarker, j + len(jmarker))
+    return out
+
+
+def _echo_request(url, method, headers, data):
+    """Print the real HTTP request as a clean curl-equivalent, so the audience
+    sees an actual attack request going to Avi. This is exactly what _req sends."""
+    if not SHOW_REQUESTS:
+        return
+    parts = ['curl']
+    if CLIENT_CERT:
+        parts.append('--cert %s' % os.path.basename(CLIENT_CERT))
+        parts.append('--key %s' % os.path.basename(CLIENT_KEY))
+    if method and method != 'GET':
+        parts.append('-X %s' % method)
+    for k, v in (headers or {}).items():
+        shown = _truncate_token(v) if k.lower() == 'authorization' else v
+        parts.append("-H '%s: %s'" % (k, shown))
+    if data:
+        body = data if isinstance(data, str) else data.decode('utf-8', 'replace')
+        body = _mask_secrets(body)
+        if len(body) > 160:
+            body = body[:157] + '...'
+        parts.append("-d '%s'" % body)
+    parts.append(url)
+    print('  $ ' + ' \\\n      '.join(parts))
+
+
 def _req(url, method='POST', headers=None, data=None):
+    _echo_request(url, method, headers, data)
     body = data.encode() if isinstance(data, str) else data
     r = urllib.request.Request(url, data=body, method=method, headers=headers or {})
     try:

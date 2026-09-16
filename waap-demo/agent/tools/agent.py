@@ -81,7 +81,82 @@ if CLIENT_CERT:
         sys.exit(2)
 
 
+def _truncate_token(val):
+    """Show a real JWT as head...tail so it is visibly genuine without flooding
+    the console with 800 characters."""
+    # val looks like 'Bearer eyJhbGciOi....<long>....Xr9pQ'
+    parts = val.split(' ', 1)
+    if len(parts) == 2 and len(parts[1]) > 40:
+        t = parts[1]
+        return parts[0] + ' ' + t[:22] + '...' + t[-6:]
+    return val
+
+
+# Toggle the request echo (default on). Set SHOW_REQUESTS=0 to silence it.
+SHOW_REQUESTS = os.environ.get('SHOW_REQUESTS', '1') != '0'
+
+
+def _mask_secrets(body):
+    """Replace secret values in a request body with *** for display only.
+    Masks client_secret and password in both urlencoded (key=value&...) and
+    JSON ("key":"value") bodies. The real value still goes on the wire; only
+    the echoed copy is masked."""
+    SECRET_KEYS = ('client_secret', 'password')
+    out = body
+    for key in SECRET_KEYS:
+        # urlencoded form: key=value  (value ends at & or end-of-string)
+        marker = key + '='
+        i = out.find(marker)
+        while i != -1:
+            start = i + len(marker)
+            end = out.find('&', start)
+            if end == -1:
+                end = len(out)
+            out = out[:start] + '***' + out[end:]
+            i = out.find(marker, start + 3)
+        # JSON form: "key":"value" or "key": "value"
+        jmarker = '"' + key + '"'
+        j = out.find(jmarker)
+        while j != -1:
+            colon = out.find(':', j + len(jmarker))
+            q1 = out.find('"', colon + 1) if colon != -1 else -1
+            q2 = out.find('"', q1 + 1) if q1 != -1 else -1
+            if q1 != -1 and q2 != -1:
+                out = out[:q1 + 1] + '***' + out[q2:]
+            j = out.find(jmarker, j + len(jmarker))
+    return out
+
+
+def _echo_request(url, method, headers, data):
+    """Print the real HTTP request as a clean curl-equivalent, so the audience
+    sees an actual request going to Avi rather than opaque script output. What
+    is printed is exactly what _req sends on the wire."""
+    if not SHOW_REQUESTS:
+        return
+    parts = ['curl']
+    if CLIENT_CERT:
+        # show the cert basenames, not the full path (keeps it clean)
+        parts.append('--cert %s' % os.path.basename(CLIENT_CERT))
+        parts.append('--key %s' % os.path.basename(CLIENT_KEY))
+    if method and method != 'GET':
+        parts.append('-X %s' % method)
+    for k, v in (headers or {}).items():
+        shown = _truncate_token(v) if k.lower() == 'authorization' else v
+        parts.append("-H '%s: %s'" % (k, shown))
+    if data:
+        body = data if isinstance(data, str) else data.decode('utf-8', 'replace')
+        body = _mask_secrets(body)
+        if len(body) > 160:
+            body = body[:157] + '...'
+        parts.append("-d '%s'" % body)
+    parts.append(url)
+    # print as a wrapped, readable curl command prefixed with the $ prompt
+    line = '  $ ' + ' \\\n      '.join(parts)
+    print(line)
+
+
 def _req(url, method='GET', headers=None, data=None, stream=False):
+    _echo_request(url, method, headers, data)
     body = data.encode() if isinstance(data, str) else data
     r = urllib.request.Request(url, data=body, method=method, headers=headers or {})
     try:
@@ -187,6 +262,8 @@ def scene_mtls():
     # ONLY a successful 200 (or a metadata document) as "not enforced"; any
     # failure - TLS, connection, or HTTP 4xx - counts as rejected.
     print('[1] Connecting WITHOUT a client certificate (expect: rejected).')
+    if SHOW_REQUESTS:
+        print('  $ curl %s' % url)
     no_cert = ssl.create_default_context()
     no_cert.check_hostname = False
     no_cert.verify_mode = ssl.CERT_NONE  # ignore SERVER cert; we test CLIENT cert
@@ -240,6 +317,9 @@ def scene_mtls():
         return
     try:
         req = urllib.request.Request(url, method='GET')
+        if SHOW_REQUESTS:
+            print('  $ curl --cert %s --key %s %s'
+                  % (os.path.basename(CLIENT_CERT), os.path.basename(CLIENT_KEY), url))
         resp = urllib.request.urlopen(req, context=with_cert, timeout=15)
         accepted = True
         print('    -> TLS handshake accepted; HTTP %d from the resource.' % resp.status)

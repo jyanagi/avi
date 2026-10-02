@@ -1,0 +1,909 @@
+apiVersion: v1
+data:
+  demo-app-index.html: "<html lang=\"en\"><head>\n<meta charset=\"UTF-8\">\n<meta
+    name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Avi
+    Load Balancer · Platform Demo</title>\n<script>(function(){try{const s=localStorage.getItem('avi-theme');const
+    t=s||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t)}catch(e){document.documentElement.setAttribute('data-theme','dark')}})();</script>\n<link
+    href=\"https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&amp;family=DM+Mono:wght@400;500&amp;display=swap\"
+    rel=\"stylesheet\">\n<link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml,%3Csvg
+    xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32'
+    rx='6' fill='%230f1e26'/%3E%3Cpath d='M16 6 L26 16 L16 26 L6 16 Z' fill='none'
+    stroke='%230072a3' stroke-width='3'/%3E%3Cpath d='M16 11 L21 16 L16 21 L11 16
+    Z' fill='%230072a3'/%3E%3C/svg%3E\" />\n<style>\n  :root {\n    --bg: #07090F;\n
+    \   --bg2: #0D1018;\n    --bg3: #111520;\n    --card: #141824;\n    --card2: #1A1F2E;\n
+    \   --border: rgba(255,255,255,0.07);\n    --border2: rgba(255,255,255,0.12);\n
+    \   --text: #E8EAF0;\n    --muted: #7A8099;\n    --muted2: #A0A8C0;\n    --accent:
+    #4F8EF7;\n    --accent2: #6B9CF8;\n    --accent-glow: rgba(79,142,247,0.15);\n
+    \   --green: #3ECFA0;\n    --green-bg: rgba(62,207,160,0.1);\n    --amber: #F59E0B;\n
+    \   --amber-bg: rgba(245,158,11,0.1);\n    --red: #F26B6B;\n    --red-bg: rgba(242,107,107,0.1);\n
+    \   --purple: #A78BFA;\n    --purple-bg: rgba(167,139,250,0.1);\n    --mono: 'DM
+    Mono', monospace;\n    --sans: 'DM Sans', sans-serif;\n    --nav-bg: rgba(7,9,15,0.85);\n
+    \   --grid-line: rgba(255,255,255,0.3);\n    --legacy-bar: rgba(253, 0, 0, 0.664);\n
+    \   /* Architecture diagram palette */\n    --arch-canvas: #0D1018;\n    --arch-label:
+    rgba(255,255,255,0.38);\n    --arch-text: rgba(255,255,255,0.74);\n    --arch-subtext:
+    rgba(255,255,255,0.38);\n    --arch-neutral-fill: #141824;\n    --arch-neutral-border:
+    rgba(255,255,255,0.12);\n    --arch-muted-border: rgba(255,255,255,0.20);\n    --arch-blue-fill:
+    #1A2A44;\n    --arch-blue-fill-deep: #101A30;\n    --arch-blue-text: #90B8F8;\n
+    \   --arch-blue-subtext: rgba(144,184,248,0.62);\n    --arch-blue-border: rgba(79,142,247,0.45);\n
+    \   --arch-blue-line: rgba(79,142,247,0.42);\n    --arch-purple-fill: #1A1F35;\n
+    \   --arch-purple-fill-deep: #1E1A2E;\n    --arch-purple-text: #C4B5FD;\n    --arch-purple-subtext:
+    rgba(196,181,253,0.62);\n    --arch-purple-border: rgba(167,139,250,0.40);\n    --arch-purple-line:
+    rgba(167,139,250,0.30);\n    --arch-green-cluster: #0F1920;\n    --arch-green-fill:
+    #0D2018;\n    --arch-green-backend: #131A1A;\n    --arch-green-text: #6EE7B7;\n
+    \   --arch-green-subtext: rgba(110,231,183,0.60);\n    --arch-green-border: rgba(62,207,160,0.38);\n
+    \   --arch-green-line: rgba(62,207,160,0.30);\n    --arch-amber-fill: #1A1A0D;\n
+    \   --arch-amber-text: #FCD34D;\n    --arch-amber-subtext: rgba(252,211,77,0.58);\n
+    \   --arch-amber-border: rgba(245,158,11,0.42);\n    --arch-cicd-fill: #1A1A1A;\n
+    \   --arch-cluster-panel-fill:#0F1920;\n    --arch-security-fill:#1E1A2E;\n    --arch-analytics-fill:#1E1A2E;\n
+    \   --arch-identity-fill:#26151D;\n    --arch-identity-text:#FDA4AF;\n    --arch-identity-subtext:rgba(253,164,175,0.70);\n
+    \   --arch-identity-border:rgba(251,113,133,0.48);\n    --arch-identity-line:#FB7185;\n
+    \ }\n\n  html[data-theme=\"light\"] {\n    color-scheme: light;\n    --bg:#F7F9FC;
+    --bg2:#EEF2F7; --bg3:#E6EBF2; --card:#FFFFFF; --card2:#F8FAFD;\n    --border:rgba(15,23,42,.08);
+    --border2:rgba(15,23,42,.14); --text:#142033; --muted:#667085; --muted2:#475467;\n
+    \   --accent:#2563EB; --accent2:#3B6FE8; --accent-glow:rgba(37,99,235,.10);\n
+    \   --green:#159A72; --green-bg:rgba(21,154,114,.10); --amber:#C97900; --amber-bg:rgba(201,121,0,.10);\n
+    \   --red:#D84A4A; --red-bg:rgba(216,74,74,.10); --purple:#7C5CE0; --purple-bg:rgba(124,92,224,.10);\n
+    \   --nav-bg:rgba(247,249,252,.88); --grid-line:rgba(15,23,42,.20); --legacy-bar:rgba(253,
+    0, 0, 0.664);\n    /* High-contrast presentation palette for the architecture
+    diagram */\n    --arch-canvas:#F8FAFC;\n    --arch-label:#475467;\n    --arch-text:#172033;\n
+    \   --arch-subtext:#667085;\n    --arch-neutral-fill:#FFFFFF;\n    --arch-neutral-border:#CBD5E1;\n
+    \   --arch-muted-border:#94A3B8;\n    --arch-blue-fill:#EAF2FF;\n    --arch-blue-fill-deep:#EFF6FF;\n
+    \   --arch-blue-text:#174EA6;\n    --arch-blue-subtext:#416B9D;\n    --arch-blue-border:#6EA8FE;\n
+    \   --arch-blue-line:#4D83CC;\n    --arch-purple-fill:#F1EDFF;\n    --arch-purple-fill-deep:#F5F1FF;\n
+    \   --arch-purple-text:#5B3CB4;\n    --arch-purple-subtext:#765FA8;\n    --arch-purple-border:#A78BFA;\n
+    \   --arch-purple-line:#8468D8;\n    --arch-green-cluster:#ECFDF5;\n    --arch-green-fill:#E7F8F1;\n
+    \   --arch-green-backend:#F0FBF7;\n    --arch-green-text:#087A58;\n    --arch-green-subtext:#3C7F6B;\n
+    \   --arch-green-border:#55B99B;\n    --arch-green-line:#479E84;\n    --arch-amber-fill:#FFF8E6;\n
+    \   --arch-amber-text:#9A5B00;\n    --arch-amber-subtext:#9B6D25;\n    --arch-amber-border:#D99A2B;\n
+    \   --arch-cicd-fill:#F8FAFC;\n    --arch-cluster-panel-fill:#F1FBF7;\n    --arch-security-fill:#F0E9FF;\n
+    \   --arch-analytics-fill:#EAF3FF;\n    --arch-identity-fill:#FFF1F3;\n    --arch-identity-text:#A61B3B;\n
+    \   --arch-identity-subtext:#8C4457;\n    --arch-identity-border:#E78A9E;\n    --arch-identity-line:#C94B68;\n
+    \ }\n\n  * { margin: 0; padding: 0; box-sizing: border-box; }\n\n  html { scroll-behavior:
+    smooth; }\n\n  body {\n    font-family: var(--sans);\n    background: var(--bg);\n
+    \   color: var(--text);\n    line-height: 1.6;\n    overflow-x: hidden;\n  }\n\n
+    \ /* NAV */\n \n  nav {\n    position: fixed; top: 0; left: 0; right: 0; z-index:
+    100;\n    background: var(--nav-bg);\n    backdrop-filter: blur(20px);\n    border-bottom:
+    1px solid var(--border);\n    padding: 0 48px;\n    height: 60px;\n    display:
+    flex; align-items: center; justify-content: space-between;\n  }\n  \n  .nav-logo
+    {\n    display: flex; align-items: center; gap: 10px;\n    font-weight: 600; font-size:
+    16px; color: var(--text);\n    text-decoration: none;\n  }\n\n  .nav-logo-mark
+    {\n    width: 32px; height: 32px;\n    background: linear-gradient(135deg, var(--accent),
+    var(--purple));\n    border-radius: 8px;\n    display: flex; align-items: center;
+    justify-content: center;\n    font-size: 14px; font-weight: 700; color: #fff;\n
+    \ }\n  \n  .nav-links {\n    display: flex; gap: 32px; list-style: none;\n  }\n
+    \ \n  .nav-links a {\n    color: var(--muted); font-size: 14px; text-decoration:
+    none;\n    transition: color 0.2s;\n  }\n  \n  .nav-links a:hover { color: var(--text);
+    }\n\n  .nav-cta {\n    display: flex; gap: 12px; align-items: center;\n  }\n\n
+    \ .btn {\n    padding: 8px 20px; border-radius: 8px; font-size: 14px;\n    font-family:
+    var(--sans); cursor: pointer; transition: all 0.2s;\n    text-decoration: none;
+    display: inline-block;\n  }\n\n  .btn-ghost {\n    background: transparent; border:
+    1px solid var(--border2);\n    color: var(--muted2);\n  }\n  .btn-ghost:hover
+    { border-color: var(--accent); color: var(--accent); }\n\n  .btn-primary {\n    background:
+    var(--accent); border: 1px solid var(--accent);\n    color: #fff; font-weight:
+    500;\n  }\n  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px);
+    }\n\n  /* HERO */\n  .hero {\n    min-height: 100vh;\n    display: flex; align-items:
+    center;\n    padding: 120px 48px 80px;\n    position: relative; overflow: hidden;\n
+    \ }\n\n  .hero-bg {\n    position: absolute; inset: 0; pointer-events: none;\n
+    \   background:\n      radial-gradient(ellipse 800px 600px at 60% 40%, rgba(79,142,247,0.07)
+    0%, transparent 70%),\n      radial-gradient(ellipse 600px 400px at 80% 80%, rgba(167,139,250,0.05)
+    0%, transparent 60%);\n  }\n\n  .hero-grid-lines {\n    position: absolute; inset:
+    0; pointer-events: none; opacity: 0.03;\n    background-image:\n      linear-gradient(var(--grid-line)
+    1px, transparent 1px),\n      linear-gradient(90deg, var(--grid-line) 1px, transparent
+    1px);\n    background-size: 80px 80px;\n  }\n\n  .hero-inner {\n    max-width:
+    1200px; margin: 0 auto; width: 100%;\n    display: block;\n  }\n\n  .eyebrow {\n
+    \   display: inline-flex; align-items: center; gap: 8px;\n    background: var(--accent-glow);
+    border: 1px solid rgba(79,142,247,0.25);\n    padding: 4px 12px; border-radius:
+    100px;\n    font-size: 12px; color: var(--accent2); font-weight: 500;\n    margin-bottom:
+    24px; text-transform: uppercase; letter-spacing: 0.08em;\n  }\n\n  .eyebrow-dot
+    {\n    width: 6px; height: 6px; border-radius: 50%;\n    background: var(--accent);
+    animation: pulse-dot 2s ease-in-out infinite;\n  }\n\n  @keyframes pulse-dot {\n
+    \   0%, 100% { opacity: 1; transform: scale(1); }\n    50% { opacity: 0.6; transform:
+    scale(0.8); }\n  }\n\n  h1 {\n    font-size: 52px; font-weight: 300; line-height:
+    1.15;\n    color: var(--text); margin-bottom: 24px;\n    letter-spacing: -0.02em;\n
+    \ }\n\n  h1 strong {\n    font-weight: 600;\n    background: linear-gradient(135deg,
+    #fff 0%, var(--accent2) 100%);\n    -webkit-background-clip: text; -webkit-text-fill-color:
+    transparent;\n    background-clip: text;\n  }\n\n  .hero-desc {\n    font-size:
+    18px; color: var(--muted2); line-height: 1.7;\n    margin-bottom: 40px; font-weight:
+    300;\n  }\n\n  .hero-actions { display: flex; gap: 16px; align-items: center;
+    }\n\n  .hero-stats {\n    display: grid; grid-template-columns: repeat(3, 1fr);\n
+    \   gap: 1px; background: var(--border);\n    border: 1px solid var(--border);
+    border-radius: 12px;\n    overflow: hidden; margin-top: 48px;\n  }\n\n  .hero-stat
+    {\n    background: var(--card); padding: 20px 24px;\n  }\n\n  .stat-num {\n    font-size:
+    28px; font-weight: 600; color: var(--text);\n    font-family: var(--mono); margin-bottom:
+    4px;\n  }\n\n  .stat-label { font-size: 12px; color: var(--muted); }\n\n  /* ARCHITECTURE
+    VISUAL */\n  .arch-visual {\n    position: relative;\n  }\n\n  .arch-canvas {\n
+    \   background: var(--card);\n    border: 1px solid var(--border2);\n    border-radius:
+    16px;\n    padding: 24px;\n    position: relative;\n    overflow: hidden;\n  }\n\n
+    \ .arch-canvas::before {\n    content: '';\n    position: absolute; inset: 0;\n
+    \   background: radial-gradient(ellipse 400px 300px at 50% 30%, rgba(79,142,247,0.05)
+    0%, transparent 70%);\n    pointer-events: none;\n  }\n\n  /* SECTIONS */\n  section
+    {\n    padding: 100px 48px;\n    max-width: 1296px; margin: 0 auto; width: 100%;\n
+    \ }\n\n  .section-wrap { padding: 100px 48px; }\n\n  .section-eyebrow {\n    display:
+    inline-flex; align-items: center; gap: 6px;\n    font-size: 11px; font-weight:
+    600; letter-spacing: 0.1em;\n    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 16px;\n  }\n\n  .section-eyebrow::before {\n    content: ''; display:
+    block;\n    width: 20px; height: 1px; background: var(--accent);\n  }\n\n  h2
+    {\n    font-size: 40px; font-weight: 300; letter-spacing: -0.02em;\n    color:
+    var(--text); margin-bottom: 16px; line-height: 1.2;\n  }\n\n  h2 strong { font-weight:
+    600; }\n\n  .section-desc {\n    font-size: 17px; color: var(--muted2); max-width:
+    560px;\n    line-height: 1.7; font-weight: 300;\n  }\n\n  .section-head { margin-bottom:
+    60px; }\n\n  /* ARCHITECTURE SECTION */\n  .arch-section {\n    background: var(--bg2);\n
+    \   border-top: 1px solid var(--border);\n    border-bottom: 1px solid var(--border);\n
+    \ }\n\n  .arch-diagram {\n    background: var(--card);\n    border: 1px solid
+    var(--border2);\n    border-radius: 16px;\n    padding: 32px;\n    position: relative;\n
+    \   overflow: hidden;\n  }\n\n  .arch-diagram::after {\n    content: '';\n    position:
+    absolute; top: 0; left: 0; right: 0; height: 1px;\n    background: linear-gradient(90deg,
+    transparent, var(--accent), transparent);\n    opacity: 0.4;\n  }\n\n  /* METRICS
+    SECTION */\n  .metrics-grid {\n    display: grid;\n    grid-template-columns:
+    repeat(2, 1fr);\n    gap: 24px;\n  }\n\n  .metric-card {\n    background: var(--card);\n
+    \   border: 1px solid var(--border);\n    border-radius: 12px;\n    padding: 28px;\n
+    \   transition: border-color 0.2s;\n    position: relative; overflow: hidden;\n
+    \ }\n\n  .metric-card:hover { border-color: var(--border2); }\n\n  .metric-card::before
+    {\n    content: ''; position: absolute;\n    top: 0; left: 0; right: 0; height:
+    2px;\n  }\n\n  .metric-card.m-blue::before { background: linear-gradient(90deg,
+    var(--accent), transparent); }\n  .metric-card.m-green::before { background: linear-gradient(90deg,
+    var(--green), transparent); }\n  .metric-card.m-purple::before { background: linear-gradient(90deg,
+    var(--purple), transparent); }\n  .metric-card.m-amber::before { background: linear-gradient(90deg,
+    var(--amber), transparent); }\n\n  .metric-icon {\n    width: 40px; height: 40px;
+    border-radius: 10px;\n    display: flex; align-items: center; justify-content:
+    center;\n    font-size: 18px; margin-bottom: 16px;\n  }\n\n  .metric-card h3 {\n
+    \   font-size: 14px; font-weight: 500; color: var(--muted2);\n    margin-bottom:
+    8px; text-transform: uppercase; letter-spacing: 0.05em;\n  }\n\n  .metric-value
+    {\n    font-size: 36px; font-weight: 600; font-family: var(--mono);\n    color:
+    var(--text); margin-bottom: 8px; line-height: 1;\n  }\n\n  .metric-desc { font-size:
+    13px; color: var(--muted); line-height: 1.5; }\n\n  .metric-bar-wrap { margin-top:
+    20px; }\n\n  .metric-bar-label {\n    display: flex; justify-content: space-between;\n
+    \   font-size: 12px; color: var(--muted); margin-bottom: 6px;\n  }\n\n  .metric-bar
+    {\n    height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden;\n
+    \ }\n\n  .metric-bar-fill {\n    height: 100%; border-radius: 3px;\n    transition:
+    width 1s cubic-bezier(0.4, 0, 0.2, 1);\n  }\n\n  /* COST COMPARISON */\n  .cost-section
+    {\n    background: var(--bg2);\n    border-top: 1px solid var(--border);\n    border-bottom:
+    1px solid var(--border);\n  }\n\n  .cost-layout {\n    display: grid; grid-template-columns:
+    1fr 1fr; gap: 32px;\n  }\n\n  .cost-card {\n    background: var(--card); border:
+    1px solid var(--border);\n    border-radius: 16px; padding: 32px;\n    position:
+    relative; overflow: hidden;\n  }\n\n  .cost-card.featured {\n    border-color:
+    rgba(79,142,247,0.3);\n    background: linear-gradient(135deg, var(--card) 0%,
+    rgba(79,142,247,0.03) 100%);\n  }\n\n  .cost-badge {\n    position: absolute;
+    top: 20px; right: 20px;\n    background: var(--accent-glow); border: 1px solid
+    rgba(79,142,247,0.3);\n    color: var(--accent2); font-size: 11px; font-weight:
+    600;\n    padding: 4px 10px; border-radius: 100px;\n    text-transform: uppercase;
+    letter-spacing: 0.08em;\n  }\n\n  .cost-vendor {\n    font-size: 13px; color:
+    var(--muted); text-transform: uppercase;\n    letter-spacing: 0.08em; margin-bottom:
+    8px;\n  }\n\n  .cost-product {\n    font-size: 22px; font-weight: 600; color:
+    var(--text); margin-bottom: 24px;\n  }\n\n  .cost-items { display: flex; flex-direction:
+    column; gap: 12px; }\n\n  .cost-item {\n    display: flex; justify-content: space-between;
+    align-items: center;\n    font-size: 14px; padding-bottom: 12px;\n    border-bottom:
+    1px solid var(--border);\n  }\n\n  .cost-item:last-child { border-bottom: none;
+    padding-bottom: 0; }\n\n  .cost-item-label { color: var(--muted2); }\n  .cost-item-value
+    { font-family: var(--mono); font-weight: 500; color: var(--text); }\n\n  .cost-item-value.positive
+    { color: var(--green); }\n  .cost-item-value.negative { color: var(--red); }\n\n
+    \ .cost-total {\n    margin-top: 24px; padding-top: 24px;\n    border-top: 1px
+    solid var(--border2);\n    display: flex; justify-content: space-between; align-items:
+    center;\n  }\n\n  .cost-total-label { font-size: 14px; color: var(--muted2); font-weight:
+    500; }\n  .cost-total-value { font-size: 28px; font-family: var(--mono); font-weight:
+    600; }\n\n  .cost-savings-banner {\n    background: var(--green-bg); border: 1px
+    solid rgba(62,207,160,0.2);\n    border-radius: 12px; padding: 20px 28px;\n    display:
+    flex; justify-content: space-between; align-items: center;\n    margin-top: 24px;\n
+    \ }\n\n  .savings-label { font-size: 14px; color: var(--muted2); }\n  .savings-value
+    { font-size: 24px; font-weight: 700; color: var(--green); font-family: var(--mono);
+    }\n\n  /* FEATURES */\n  .features-grid {\n    display: grid; grid-template-columns:
+    repeat(3, 1fr); gap: 1px;\n    background: var(--border); border: 1px solid var(--border);\n
+    \   border-radius: 16px; overflow: hidden;\n  }\n\n  .feature-item {\n    background:
+    var(--card); padding: 32px 28px;\n    transition: background 0.2s;\n  }\n\n  .feature-item:hover
+    { background: var(--card2); }\n\n  .feature-icon {\n    font-size: 24px; margin-bottom:
+    16px;\n    display: flex; align-items: center; justify-content: center;\n    width:
+    48px; height: 48px; border-radius: 12px;\n  }\n\n  .feature-item h3 {\n    font-size:
+    16px; font-weight: 600; color: var(--text);\n    margin-bottom: 8px;\n  }\n\n
+    \ .feature-item p { font-size: 14px; color: var(--muted); line-height: 1.6; }\n\n
+    \ /* OUTCOME METRICS */\n  .outcome-grid {\n    display: grid; grid-template-columns:
+    repeat(4, 1fr); gap: 16px;\n  }\n\n  .outcome-card {\n    background: var(--card);
+    border: 1px solid var(--border);\n    border-radius: 12px; padding: 24px 20px;
+    text-align: center;\n    position: relative; overflow: hidden;\n    transition:
+    transform 0.2s, border-color 0.2s;\n  }\n\n  .outcome-card:hover { transform:
+    translateY(-4px); border-color: var(--border2); }\n\n  .outcome-num {\n    font-size:
+    42px; font-weight: 700; font-family: var(--mono);\n    line-height: 1; margin-bottom:
+    8px;\n  }\n\n  .outcome-label { font-size: 13px; color: var(--muted); line-height:
+    1.4; }\n\n  /* CHART */\n  .chart-wrap {\n    background: var(--card); border:
+    1px solid var(--border);\n    border-radius: 16px; padding: 32px; margin-top:
+    40px;\n  }\n\n  .chart-header {\n    display: flex; justify-content: space-between;
+    align-items: flex-start;\n    margin-bottom: 32px;\n  }\n\n  .chart-title { font-size:
+    16px; font-weight: 600; color: var(--text); }\n  .chart-subtitle { font-size:
+    13px; color: var(--muted); margin-top: 4px; }\n\n  .chart-legend {\n    display:
+    flex; gap: 20px;\n  }\n\n  .legend-item {\n    display: flex; align-items: center;
+    gap: 8px;\n    font-size: 13px; color: var(--muted2);\n  }\n\n  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%; }\n\n  .chart-bars {\n    display:
+    flex; gap: 8px; align-items: flex-end; height: 200px;\n    border-bottom: 1px
+    solid var(--border); padding-bottom: 8px;\n  }\n\n  .bar-group { flex: 1; display:
+    flex; gap: 3px; align-items: flex-end; }\n\n  .bar {\n    flex: 1; border-radius:
+    4px 4px 0 0; min-width: 16px;\n    transition: opacity 0.2s; cursor: pointer;\n
+    \ }\n\n  .bar:hover { opacity: 0.8; }\n\n  .bar.avi { background: var(--accent);
+    }\n  .bar.competitor { background: var(--legacy-bar); }\n\n  .chart-labels {\n
+    \   display: flex; gap: 8px; margin-top: 8px;\n  }\n\n  .chart-label {\n    flex:
+    1; text-align: center; font-size: 11px; color: var(--muted);\n  }\n\n  /* CTA
+    SECTION */\n  .cta-section {\n    text-align: center;\n    background: radial-gradient(ellipse
+    800px 400px at 50% 50%, rgba(79,142,247,0.06) 0%, transparent 70%);\n    border-top:
+    1px solid var(--border);\n  }\n\n  .cta-inner { max-width: 640px; margin: 0 auto;
+    }\n\n  .cta-section h2 { font-size: 44px; margin-bottom: 20px; }\n\n  .cta-section
+    p { font-size: 18px; color: var(--muted2); margin-bottom: 40px; }\n\n  .cta-buttons
+    { display: flex; gap: 16px; justify-content: center; }\n\n  .btn-large { padding:
+    14px 32px; font-size: 16px; }\n\n  /* FOOTER */\n  footer {\n    background: var(--bg2);
+    border-top: 1px solid var(--border);\n    padding: 40px 48px;\n    display: flex;
+    justify-content: space-between; align-items: center;\n  }\n\n  .footer-logo {
+    display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px;
+    }\n\n  .footer-note { font-size: 13px; color: var(--muted); }\n\n  /* TAG CHIP
+    */\n  .tag {\n    display: inline-block; padding: 2px 10px; border-radius: 100px;\n
+    \   font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing:
+    0.06em;\n  }\n\n  .tag-blue { background: var(--accent-glow); color: var(--accent2);
+    border: 1px solid rgba(79,142,247,0.2); }\n  .tag-green { background: var(--green-bg);
+    color: var(--green); border: 1px solid rgba(62,207,160,0.2); }\n  .tag-purple
+    { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2);
+    }\n  .tag-amber { background: var(--amber-bg); color: var(--amber); border: 1px
+    solid rgba(245,158,11,0.2); }\n\n  /* LIVE INDICATOR */\n  .live-badge {\n    display:
+    inline-flex; align-items: center; gap: 6px;\n    background: rgba(62,207,160,0.1);
+    border: 1px solid rgba(62,207,160,0.2);\n    padding: 4px 10px; border-radius:
+    100px;\n    font-size: 11px; font-weight: 600; color: var(--green);\n    text-transform:
+    uppercase; letter-spacing: 0.07em;\n  }\n\n  .live-dot {\n    width: 6px; height:
+    6px; background: var(--green);\n    border-radius: 50%; animation: pulse-dot 1.5s
+    ease-in-out infinite;\n  }\n\n  /* COMPARE TABLE */\n  .compare-table {\n    width:
+    100%; border-collapse: collapse; font-size: 14px;\n  }\n\n  .compare-table th
+    {\n    padding: 12px 16px; text-align: left; font-size: 12px;\n    font-weight:
+    600; text-transform: uppercase; letter-spacing: 0.06em;\n    color: var(--muted);
+    border-bottom: 1px solid var(--border);\n  }\n\n  .compare-table td {\n    padding:
+    14px 16px; border-bottom: 1px solid var(--border);\n    color: var(--muted2);\n
+    \ }\n\n  .compare-table tr:last-child td { border-bottom: none; }\n\n  .compare-table
+    td:first-child { color: var(--text); font-weight: 500; }\n\n  .compare-table .win
+    { color: var(--green); font-weight: 600; }\n\n  .check { color: var(--green);
+    font-size: 16px; }\n  .cross { color: var(--red); font-size: 16px; }\n\n  /* ANIMATE
+    ON SCROLL */\n  .fade-in {\n    opacity: 0; transform: translateY(24px);\n    transition:
+    opacity 0.6s ease, transform 0.6s ease;\n  }\n\n  .fade-in.visible {\n    opacity:
+    1; transform: translateY(0);\n  }\n\n  /* ARCH SVG nodes */\n  .arch-node {\n
+    \   cursor: pointer;\n    transition: filter 0.2s;\n  }\n  .arch-node:hover {
+    filter: brightness(1.15); }\n\n  /* TOOLTIP */\n  #tooltip {\n    position: fixed;
+    pointer-events: none;\n    background: var(--card2); border: 1px solid var(--border2);\n
+    \   border-radius: 8px; padding: 8px 14px;\n    font-size: 13px; color: var(--text);\n
+    \   opacity: 0; transition: opacity 0.2s;\n    z-index: 999; max-width: 200px;
+    line-height: 1.5;\n  }\n\n\n  .hero-left{max-width:780px}\n  .theme-toggle{width:42px;height:36px;border-radius:9px;border:1px
+    solid var(--border2);background:var(--card);color:var(--muted2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}\n
+    \ .theme-toggle:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}\n
+    \ .theme-toggle svg{width:17px;height:17px}.theme-toggle .icon-sun{display:none}html[data-theme=\"light\"]
+    .theme-toggle .icon-sun{display:block}html[data-theme=\"light\"] .theme-toggle
+    .icon-moon{display:none}\n  html[data-theme=\"light\"] h1 strong{background:linear-gradient(135deg,#142033
+    0%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}\n
+    \ .arch-diagram #arch-svg{background:var(--arch-canvas);border-radius:12px;padding:8px;transition:background
+    .25s ease}\n  .arch-diagram svg rect,.arch-diagram svg text,.arch-diagram svg
+    line,.arch-diagram svg path,.arch-diagram svg circle{transition:fill .25s ease,stroke
+    .25s ease,color .25s ease}\n  .arch-se-cluster{fill:var(--arch-cluster-panel-fill)
+    !important;stroke:var(--arch-green-border) !important}\n  .arch-security-panel{fill:var(--arch-security-fill)
+    !important;stroke:var(--arch-purple-border) !important}\n  .arch-analytics-panel{fill:var(--arch-analytics-fill)
+    !important;stroke:var(--arch-blue-border) !important}\n  html[data-theme=\"light\"]
+    .arch-se-cluster{filter:none}\n  html[data-theme=\"light\"] .arch-security-panel,\n
+    \ html[data-theme=\"light\"] .arch-analytics-panel{filter:none}\n\n  #cost a {
+    color:var(--accent); }\n  #cost p + p { margin-top:16px; }\n  #cost .cost-item
+    { gap:16px; }\n  #cost .cost-item-value { white-space:nowrap; }\n  #cost .cost-savings-banner
+    { flex-wrap:wrap; gap:16px; }\n  #cost .chart-header { flex-wrap:wrap; gap:16px;
+    }\n  .discount-control { margin-top:20px; padding:16px; border:1px solid var(--border);
+    border-radius:10px; background:var(--bg3); }\n  .discount-control label { display:flex;
+    justify-content:space-between; gap:16px; margin-bottom:10px; font-size:13px; color:var(--muted2);
+    }\n  .discount-control output { color:var(--text); font-family:var(--mono); font-weight:600;
+    }\n  .discount-control input[type=\"range\"] { width:100%; accent-color:var(--accent);
+    cursor:pointer; }\n  .price-bar-group { justify-content:center; }\n  .price-bar-group
+    .bar { max-width:120px; }\n  @media(max-width:800px) { #cost .cost-layout { grid-template-columns:1fr;
+    } }\n  @media(max-width:600px) { #cost .cost-card, #cost .chart-wrap { padding:20px;
+    } #cost .cost-total { flex-wrap:wrap; gap:8px; } #cost .cost-item { font-size:12px;
+    } #cost .savings-value { font-size:20px; } }\n</style>\n</head>\n<body>\n\n<div
+    id=\"tooltip\"></div>\n\n<!-- NAV -->\n<nav>\n  <a class=\"nav-logo\" href=\"#\">\n
+    \   <div class=\"nav-logo-mark\">Avi</div>\n    VMware Avi Load Balancer\n  </a>\n
+    \ <ul class=\"nav-links\">\n    <li><a href=\"#architecture\">Platform Architecture</a></li>\n
+    \   <li><a href=\"#metrics\">Outcome-Driven Metrics</a></li>\n    <li><a href=\"#cost\">Cost
+    Analysis</a></li>\n    <li><a href=\"#features\">Feature Comparison</a></li>\n
+    \   <li><a href=\"#capabilities\">Platform Capabilities</a></li>\n  </ul>\n  <div
+    class=\"nav-cta\">\n    <button class=\"theme-toggle\" id=\"theme-toggle\" type=\"button\"
+    aria-label=\"Switch to light mode\" aria-pressed=\"false\" title=\"Toggle light
+    / dark theme\"><svg class=\"icon-moon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"
+    stroke-width=\"1.8\"><path d=\"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\"/></svg><svg
+    class=\"icon-sun\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"
+    stroke-width=\"1.8\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12
+    20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66
+    6.34l1.41-1.41\"/></svg></button>\n  <!--\n    <a href=\"#\" class=\"btn btn-ghost\">Sign
+    In</a>\n    <a href=\"#\" class=\"btn btn-primary\">Request Demo</a>\n  -->\n
+    \ </div>\n</nav>\n\n<!-- HERO -->\n<div class=\"hero\">\n  <div class=\"hero-bg\"></div>\n
+    \ <div class=\"hero-grid-lines\"></div>\n  <div class=\"hero-inner\" style=\"max-width:1200px;margin:0
+    auto;width:100%\">\n    <div class=\"hero-left\">\n      <div class=\"eyebrow\">\n
+    \       <span class=\"eyebrow-dot\"></span>\n        Platform Demo\n      </div>\n
+    \     <h1>The <strong>Advanced</strong><br>Load Balancer<br>Built for Cloud</h1>\n
+    \     <p class=\"hero-desc\">\n        Software-defined, AI-powered application
+    delivery. Full-stack visibility, automated operations, and measurable cost reduction
+    versus legacy ADC hardware.\n      </p>\n      <div class=\"hero-actions\">\n
+    \       <a href=\"#architecture\" class=\"btn btn-primary btn-large\">Explore
+    Platform</a>\n        <a href=\"#cost\" class=\"btn btn-ghost btn-large\">See
+    Cost Analysis</a>\n      </div>\n      <div class=\"hero-stats\">\n        <div
+    class=\"hero-stat\">\n          <div class=\"stat-num\">99.999<span style=\"font-size:18px\">%</span></div>\n
+    \         <div class=\"stat-label\">Availability SLA</div>\n        </div>\n        <div
+    class=\"hero-stat\">\n          <div class=\"stat-num\"><span id=\"hero-savings-pct\">22.6</span><span
+    style=\"font-size:18px\">%</span></div>\n          <div class=\"stat-label\" id=\"hero-savings-label\">3-year
+    price reduction</div>\n        </div>\n        <div class=\"hero-stat\">\n          <div
+    class=\"stat-num\">&lt;1<span style=\"font-size:18px\">ms</span></div>\n          <div
+    class=\"stat-label\">Policy propagation</div>\n        </div>\n      </div>\n
+    \   </div>\n\n  </div>\n</div>\n\n<!-- ARCHITECTURE -->\n<div class=\"arch-section\"
+    id=\"architecture\">\n  <section>\n    <div class=\"section-head fade-in visible\">\n
+    \     <div class=\"section-eyebrow\">Platform Architecture</div>\n      <h2>How
+    Avi <strong>Works</strong></h2>\n      <p class=\"section-desc\">A software-defined
+    architecture decouples the data plane from the control plane, enabling elastic
+    scaling, unified analytics, and cloud-native operations.</p>\n    </div>\n\n    <div
+    class=\"arch-diagram fade-in visible\">\n      <svg id=\"arch-svg\" width=\"100%\"
+    viewBox=\"0 0 1120 610\" style=\"display:block;overflow:visible\">\n        <defs>\n
+    \         <marker id=\"arr\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\"
+    markerHeight=\"7\" orient=\"auto-start-reverse\">\n            <path d=\"M2 2L8
+    5L2 8\" fill=\"none\" stroke=\"var(--arch-blue-line)\" stroke-width=\"1.5\" stroke-linecap=\"round\"></path>\n
+    \         </marker>\n          <marker id=\"arr-green\" viewBox=\"0 0 10 10\"
+    refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\">\n
+    \           <path d=\"M2 2L8 5L2 8\" fill=\"none\" stroke=\"var(--arch-green-line)\"
+    stroke-width=\"1.5\" stroke-linecap=\"round\"></path>\n          </marker>\n          <marker
+    id=\"arr-purple\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\"
+    markerHeight=\"7\" orient=\"auto-start-reverse\">\n            <path d=\"M2 2L8
+    5L2 8\" fill=\"none\" stroke=\"var(--arch-purple-line)\" stroke-width=\"1.5\"
+    stroke-linecap=\"round\"></path>\n          </marker>\n          <marker id=\"arr-identity\"
+    viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\"
+    orient=\"auto-start-reverse\">\n            <path d=\"M2 2L8 5L2 8\" fill=\"none\"
+    stroke=\"var(--arch-identity-line)\" stroke-width=\"1.6\" stroke-linecap=\"round\"></path>\n
+    \         </marker>\n        </defs>\n\n        <!-- PLANE LABELS -->\n        <text
+    x=\"40\" y=\"28\" font-size=\"11\" fill=\"var(--arch-label)\" font-family=\"DM
+    Sans,sans-serif\" font-weight=\"700\" letter-spacing=\"1.2\">CENTRALIZED CONTROL
+    PLANE &amp; AUTOMATION</text>\n        <line x1=\"40\" y1=\"38\" x2=\"1080\" y2=\"38\"
+    stroke=\"var(--arch-neutral-border)\" stroke-width=\"1\"></line>\n\n        <!--
+    CONTROL / AUTOMATION ROW -->\n        <g class=\"arch-node\" onclick=\"showTip(event,
+    'CI/CD &amp; Automation', 'Terraform provider, Ansible modules, and REST API for
+    full GitOps workflow. All configuration is declarative and version-controlled.')\">\n
+    \         <rect x=\"70\" y=\"58\" width=\"200\" height=\"72\" rx=\"11\" fill=\"var(--arch-cicd-fill)\"
+    stroke=\"var(--arch-neutral-border)\" stroke-width=\"1.2\"></rect>\n          <text
+    x=\"170\" y=\"84\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--arch-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"650\">CI/CD + Terraform</text>\n
+    \         <text x=\"170\" y=\"103\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-label)\"
+    font-family=\"DM Sans,sans-serif\">Ansible · REST API · GitOps</text>\n          <text
+    x=\"170\" y=\"119\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-label)\"
+    font-family=\"DM Sans,sans-serif\">IaC · Policy as Code</text>\n        </g>\n\n
+    \       <g class=\"arch-node\" onclick=\"showTip(event, 'Avi Controller', 'Central
+    control plane for configuration, policy, orchestration, placement, and analytics.
+    Controllers manage the Service Engines; they are not in the application data path.')\">\n
+    \         <rect x=\"455\" y=\"50\" width=\"210\" height=\"88\" rx=\"12\" fill=\"var(--arch-purple-fill)\"
+    stroke=\"var(--arch-purple-border)\" stroke-width=\"1.6\"></rect>\n          <text
+    x=\"560\" y=\"79\" text-anchor=\"middle\" font-size=\"15\" fill=\"var(--arch-purple-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"700\">Avi Controller</text>\n
+    \         <text x=\"560\" y=\"99\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-purple-subtext)\"
+    font-family=\"DM Sans,sans-serif\">3-node Control Plane Cluster</text>\n          <text
+    x=\"560\" y=\"117\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-purple-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Config · Policy · Orchestration</text>\n        </g>\n\n
+    \       <g class=\"arch-node\" onclick=\"showTip(event, 'Analytics &amp; Logs',
+    'Real-time logs and metrics streamed from Service Engines. Full-stack telemetry
+    can be exported to Splunk, Kafka, and Elasticsearch.')\">\n          <rect class=\"arch-analytics-panel\"
+    x=\"850\" y=\"58\" width=\"200\" height=\"72\" rx=\"11\" fill=\"var(--arch-analytics-fill)\"
+    stroke=\"var(--arch-blue-border)\" stroke-width=\"1.2\"></rect>\n          <text
+    x=\"950\" y=\"84\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--arch-blue-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"650\">Analytics Engine</text>\n
+    \         <text x=\"950\" y=\"103\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-blue-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Logs · Metrics · Traces</text>\n          <text
+    x=\"950\" y=\"119\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-blue-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Splunk · Kafka · Elastic</text>\n        </g>\n\n
+    \       <!-- Clean management relationships -->\n        <line x1=\"270\" y1=\"94\"
+    x2=\"453\" y2=\"94\" stroke=\"var(--arch-purple-line)\" stroke-width=\"1.2\" stroke-dasharray=\"6
+    4\" marker-end=\"url(#arr-purple)\"></line>\n        <line x1=\"667\" y1=\"94\"
+    x2=\"848\" y2=\"94\" stroke=\"var(--arch-purple-line)\" stroke-width=\"1.2\" stroke-dasharray=\"6
+    4\" marker-end=\"url(#arr-purple)\"></line>\n\n        <!-- PRIMARY TRAFFIC FLOW
+    -->\n        <text x=\"40\" y=\"178\" font-size=\"11\" fill=\"var(--arch-label)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"700\" letter-spacing=\"1.2\">DISTRIBUTED
+    DATA PLANE</text>\n        <line x1=\"40\" y1=\"188\" x2=\"1080\" y2=\"188\" stroke=\"var(--arch-neutral-border)\"
+    stroke-width=\"1\"></line>\n\n        <!-- Clients -->\n        <g class=\"arch-node\"
+    onclick=\"showTip(event, 'Clients / Users', 'Web browsers, mobile apps, API clients,
+    and other consumers initiating application traffic.')\">\n          <rect x=\"40\"
+    y=\"235\" width=\"150\" height=\"94\" rx=\"12\" fill=\"var(--arch-neutral-fill)\"
+    stroke=\"var(--arch-neutral-border)\" stroke-width=\"1.2\"></rect>\n          <text
+    x=\"115\" y=\"260\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-label)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"700\" letter-spacing=\"1\">CLIENTS</text>\n
+    \         <text x=\"115\" y=\"285\" text-anchor=\"middle\" font-size=\"13\" fill=\"var(--arch-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"600\">Web / Mobile</text>\n          <text
+    x=\"115\" y=\"304\" text-anchor=\"middle\" font-size=\"12\" fill=\"var(--arch-text)\"
+    font-family=\"DM Sans,sans-serif\">API Consumers</text>\n          <text x=\"115\"
+    y=\"320\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-label)\"
+    font-family=\"DM Sans,sans-serif\">HTTPS · gRPC · REST</text>\n        </g>\n\n
+    \       <!-- GSLB -->\n        <g class=\"arch-node\" onclick=\"showTip(event,
+    'GSLB / DNS', 'Global Server Load Balancing directs users to the optimal site
+    using health-aware failover and proximity routing.')\">\n          <rect x=\"235\"
+    y=\"247\" width=\"145\" height=\"70\" rx=\"11\" fill=\"var(--arch-blue-fill)\"
+    stroke=\"var(--arch-blue-border)\" stroke-width=\"1.5\"></rect>\n          <text
+    x=\"307.5\" y=\"276\" text-anchor=\"middle\" font-size=\"14\" fill=\"var(--arch-blue-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"700\">GSLB / DNS</text>\n          <text
+    x=\"307.5\" y=\"297\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-blue-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Global routing</text>\n        </g>\n\n        <!--
+    Virtual Service -->\n        <g class=\"arch-node\" onclick=\"showTip(event, 'Virtual
+    Service / VIP', 'The application entry point. Provides SSL/TLS termination, HTTP
+    policy, rate limiting, authentication, compression, and application security.')\">\n
+    \         <rect x=\"425\" y=\"235\" width=\"190\" height=\"94\" rx=\"12\" fill=\"var(--arch-blue-fill-deep)\"
+    stroke=\"var(--arch-blue-border)\" stroke-width=\"1.6\"></rect>\n          <text
+    x=\"520\" y=\"261\" text-anchor=\"middle\" font-size=\"14\" fill=\"var(--arch-blue-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"700\">Virtual Service (VIP)</text>\n
+    \         <text x=\"520\" y=\"282\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-blue-subtext)\"
+    font-family=\"DM Sans,sans-serif\">SSL/TLS · HTTP/2 · WebSocket</text>\n          <text
+    x=\"520\" y=\"300\" text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-blue-subtext)\"
+    font-family=\"DM Sans,sans-serif\">WAF · DDoS · Rate Limit · Auth</text>\n          <text
+    x=\"520\" y=\"317\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-blue-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Application policy enforcement</text>\n        </g>\n\n
+    \       <!-- SE Cluster -->\n        <g class=\"arch-node\" onclick=\"showTip(event,
+    'Service Engine Group', 'Distributed software data plane. Service Engines process
+    traffic and can scale out automatically based on configured thresholds and placement
+    policy.')\">\n          <rect class=\"arch-se-cluster\" x=\"660\" y=\"215\" width=\"240\"
+    height=\"134\" rx=\"14\" fill=\"var(--arch-cluster-panel-fill)\" stroke=\"var(--arch-green-border)\"
+    stroke-width=\"1.3\"></rect>\n          <text x=\"780\" y=\"239\" text-anchor=\"middle\"
+    font-size=\"11\" fill=\"var(--arch-green-subtext)\" font-family=\"DM Sans,sans-serif\"
+    font-weight=\"700\" letter-spacing=\"1\">SERVICE ENGINE GROUP</text>\n          <rect
+    x=\"680\" y=\"255\" width=\"60\" height=\"58\" rx=\"9\" fill=\"var(--arch-green-fill)\"
+    stroke=\"var(--arch-green-border)\" stroke-width=\"1\"></rect>\n          <text
+    x=\"710\" y=\"278\" text-anchor=\"middle\" font-size=\"12\" fill=\"var(--arch-green-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"650\">SE-01</text>\n          <text
+    x=\"710\" y=\"297\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-green-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Active</text>\n\n          <rect x=\"750\"
+    y=\"255\" width=\"60\" height=\"58\" rx=\"9\" fill=\"var(--arch-green-fill)\"
+    stroke=\"var(--arch-green-border)\" stroke-width=\"1\"></rect>\n          <text
+    x=\"780\" y=\"278\" text-anchor=\"middle\" font-size=\"12\" fill=\"var(--arch-green-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"650\">SE-02</text>\n          <text
+    x=\"780\" y=\"297\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-green-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Active</text>\n\n          <rect x=\"820\"
+    y=\"255\" width=\"60\" height=\"58\" rx=\"9\" fill=\"var(--arch-amber-fill)\"
+    stroke=\"var(--arch-amber-border)\" stroke-width=\"1\"></rect>\n          <text
+    x=\"850\" y=\"278\" text-anchor=\"middle\" font-size=\"12\" fill=\"var(--arch-amber-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"650\">SE-03</text>\n          <text
+    x=\"850\" y=\"297\" text-anchor=\"middle\" font-size=\"10\" fill=\"var(--arch-amber-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Scale-out</text>\n\n          <text x=\"780\"
+    y=\"334\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-green-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Elastic distributed data plane</text>\n        </g>\n\n
+    \       <!-- Backend targets -->\n        <g>\n          <text x=\"985\" y=\"218\"
+    text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-label)\" font-family=\"DM
+    Sans,sans-serif\" font-weight=\"700\" letter-spacing=\"1\">BACKEND TARGETS</text>\n\n
+    \         <g class=\"arch-node\" onclick=\"showTip(event, 'App Server Pool', 'Traditional
+    application servers using configurable load-balancing algorithms and continuous
+    health monitoring.')\">\n            <rect x=\"930\" y=\"232\" width=\"150\" height=\"56\"
+    rx=\"10\" fill=\"var(--arch-green-backend)\" stroke=\"var(--arch-green-border)\"
+    stroke-width=\"1\"></rect>\n            <text x=\"1005\" y=\"255\" text-anchor=\"middle\"
+    font-size=\"12.5\" fill=\"var(--arch-green-text)\" font-family=\"DM Sans,sans-serif\"
+    font-weight=\"650\">App Servers</text>\n            <text x=\"1005\" y=\"273\"
+    text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-green-subtext)\" font-family=\"DM
+    Sans,sans-serif\">Health monitored</text>\n          </g>\n\n          <g class=\"arch-node\"
+    onclick=\"showTip(event, 'Kubernetes / Containers', 'Native Kubernetes integration
+    through AKO, with automatic application discovery and pool creation.')\">\n            <rect
+    x=\"930\" y=\"300\" width=\"150\" height=\"56\" rx=\"10\" fill=\"var(--arch-green-backend)\"
+    stroke=\"var(--arch-green-border)\" stroke-width=\"1\"></rect>\n            <text
+    x=\"1005\" y=\"323\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"var(--arch-green-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"650\">K8s / Containers</text>\n
+    \           <text x=\"1005\" y=\"341\" text-anchor=\"middle\" font-size=\"10.5\"
+    fill=\"var(--arch-green-subtext)\" font-family=\"DM Sans,sans-serif\">AKO · Auto-discovery</text>\n
+    \         </g>\n\n          <g class=\"arch-node\" onclick=\"showTip(event, 'Cloud
+    / On-Prem', 'Backend applications can run across VMware, public cloud, bare metal,
+    VMs, and containers.')\">\n            <rect x=\"930\" y=\"368\" width=\"150\"
+    height=\"56\" rx=\"10\" fill=\"var(--arch-green-backend)\" stroke=\"var(--arch-green-border)\"
+    stroke-width=\"1\"></rect>\n            <text x=\"1005\" y=\"391\" text-anchor=\"middle\"
+    font-size=\"12.5\" fill=\"var(--arch-green-text)\" font-family=\"DM Sans,sans-serif\"
+    font-weight=\"650\">Cloud / On-Prem</text>\n            <text x=\"1005\" y=\"409\"
+    text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-green-subtext)\" font-family=\"DM
+    Sans,sans-serif\">VMware · AWS · Azure · GCP</text>\n          </g>\n        </g>\n\n
+    \       <!-- Primary data-path arrows: one clean horizontal story -->\n        <line
+    x1=\"192\" y1=\"282\" x2=\"233\" y2=\"282\" stroke=\"var(--arch-blue-line)\" stroke-width=\"2\"
+    marker-end=\"url(#arr)\"></line>\n        <line x1=\"382\" y1=\"282\" x2=\"423\"
+    y2=\"282\" stroke=\"var(--arch-blue-line)\" stroke-width=\"2\" marker-end=\"url(#arr)\"></line>\n
+    \       <line x1=\"617\" y1=\"282\" x2=\"658\" y2=\"282\" stroke=\"var(--arch-blue-line)\"
+    stroke-width=\"2\" marker-end=\"url(#arr)\"></line>\n\n        <!-- Backend fan-out
+    uses a dedicated branch bus, avoiding diagonals -->\n        <line x1=\"902\"
+    y1=\"282\" x2=\"915\" y2=\"282\" stroke=\"var(--arch-green-line)\" stroke-width=\"1.7\"></line>\n
+    \       <line x1=\"915\" y1=\"260\" x2=\"915\" y2=\"396\" stroke=\"var(--arch-green-line)\"
+    stroke-width=\"1.3\"></line>\n        <line x1=\"915\" y1=\"260\" x2=\"928\" y2=\"260\"
+    stroke=\"var(--arch-green-line)\" stroke-width=\"1.5\" marker-end=\"url(#arr-green)\"></line>\n
+    \       <line x1=\"915\" y1=\"328\" x2=\"928\" y2=\"328\" stroke=\"var(--arch-green-line)\"
+    stroke-width=\"1.5\" marker-end=\"url(#arr-green)\"></line>\n        <line x1=\"915\"
+    y1=\"396\" x2=\"928\" y2=\"396\" stroke=\"var(--arch-green-line)\" stroke-width=\"1.5\"
+    marker-end=\"url(#arr-green)\"></line>\n\n        <!-- Controller management bus:
+    deliberately kept above traffic path -->\n        <line x1=\"560\" y1=\"140\"
+    x2=\"560\" y2=\"164\" stroke=\"var(--arch-purple-line)\" stroke-width=\"1.3\"
+    stroke-dasharray=\"6 4\"></line>\n        <line x1=\"520\" y1=\"164\" x2=\"780\"
+    y2=\"164\" stroke=\"var(--arch-purple-line)\" stroke-width=\"1.3\" stroke-dasharray=\"6
+    4\"></line>\n        <line x1=\"520\" y1=\"164\" x2=\"520\" y2=\"233\" stroke=\"var(--arch-purple-line)\"
+    stroke-width=\"1.3\" stroke-dasharray=\"6 4\" marker-end=\"url(#arr-purple)\"></line>\n
+    \       <line x1=\"780\" y1=\"164\" x2=\"780\" y2=\"213\" stroke=\"var(--arch-purple-line)\"
+    stroke-width=\"1.3\" stroke-dasharray=\"6 4\" marker-end=\"url(#arr-purple)\"></line>\n\n
+    \       <!-- IDENTITY / AUTHORIZATION FLOW -->\n        <line x1=\"520\" y1=\"331\"
+    x2=\"520\" y2=\"363\" stroke=\"var(--arch-identity-line)\" stroke-width=\"1.8\"
+    marker-end=\"url(#arr-identity)\"></line>\n        <text x=\"536\" y=\"350\" font-size=\"10.5\"
+    fill=\"var(--arch-identity-text)\" font-family=\"DM Sans,sans-serif\" font-weight=\"650\">AuthN
+    / AuthZ</text>\n\n        <g class=\"arch-node\" onclick=\"showTip(event, 'Identity
+    Provider / SSO', 'Avi can redirect users to a configured SAML or OIDC identity
+    provider, validate the authentication response, consume identity assertions such
+    as groups, roles, and claims, enforce application access policy, and pass trusted
+    identity context to the backend application when configured.')\">\n          <rect
+    x=\"355\" y=\"365\" width=\"330\" height=\"82\" rx=\"12\" fill=\"var(--arch-identity-fill)\"
+    stroke=\"var(--arch-identity-border)\" stroke-width=\"1.4\"></rect>\n          <text
+    x=\"520\" y=\"389\" text-anchor=\"middle\" font-size=\"13.5\" fill=\"var(--arch-identity-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"700\">Identity Provider (IdP)</text>\n
+    \         <text x=\"520\" y=\"408\" text-anchor=\"middle\" font-size=\"10.8\"
+    fill=\"var(--arch-identity-subtext)\" font-family=\"DM Sans,sans-serif\">SAML
+    / OIDC / JWT · Groups · Roles · Claims</text>\n          <text x=\"520\" y=\"425\"
+    text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--arch-identity-subtext)\"
+    font-family=\"DM Sans,sans-serif\">Avi validates identity → enforces access policy</text>\n
+    \         <text x=\"520\" y=\"440\" text-anchor=\"middle\" font-size=\"10.5\"
+    fill=\"var(--arch-identity-subtext)\" font-family=\"DM Sans,sans-serif\">→ passes
+    trusted identity context to the application</text>\n        </g>\n\n        <!--
+    OBSERVABILITY / SCALE STORY -->\n        <text x=\"40\" y=\"470\" font-size=\"11\"
+    fill=\"var(--arch-label)\" font-family=\"DM Sans,sans-serif\" font-weight=\"700\"
+    letter-spacing=\"1.2\">OPERATIONS &amp; ELASTICITY</text>\n        <line x1=\"40\"
+    y1=\"480\" x2=\"1080\" y2=\"480\" stroke=\"var(--arch-neutral-border)\" stroke-width=\"1\"></line>\n\n
+    \       <g>\n          <rect x=\"205\" y=\"505\" width=\"710\" height=\"58\" rx=\"12\"
+    fill=\"var(--arch-neutral-fill)\" stroke=\"var(--arch-neutral-border)\" stroke-width=\"1\"></rect>\n
+    \         <text x=\"560\" y=\"528\" text-anchor=\"middle\" font-size=\"12\" fill=\"var(--arch-text)\"
+    font-family=\"DM Sans,sans-serif\" font-weight=\"650\">Controller monitors demand
+    and orchestrates Service Engine capacity</text>\n          <text x=\"560\" y=\"548\"
+    text-anchor=\"middle\" font-size=\"11\" fill=\"var(--arch-label)\" font-family=\"DM
+    Sans,sans-serif\">Traffic increases → threshold reached → SE-03 scales out → capacity
+    expands without changing the application path</text>\n        </g>\n\n        <!--
+    Legend -->\n        <g>\n          <line x1=\"150\" y1=\"590\" x2=\"180\" y2=\"590\"
+    stroke=\"var(--arch-blue-line)\" stroke-width=\"2\"></line>\n          <text x=\"188\"
+    y=\"594\" font-size=\"11\" fill=\"var(--arch-label)\" font-family=\"DM Sans,sans-serif\">Application
+    data path</text>\n          <line x1=\"365\" y1=\"590\" x2=\"395\" y2=\"590\"
+    stroke=\"var(--arch-purple-line)\" stroke-width=\"1.3\" stroke-dasharray=\"6 4\"></line>\n
+    \         <text x=\"403\" y=\"594\" font-size=\"11\" fill=\"var(--arch-label)\"
+    font-family=\"DM Sans,sans-serif\">Control / management</text>\n          <line
+    x1=\"565\" y1=\"590\" x2=\"595\" y2=\"590\" stroke=\"var(--arch-green-line)\"
+    stroke-width=\"1.7\"></line>\n          <text x=\"603\" y=\"594\" font-size=\"11\"
+    fill=\"var(--arch-label)\" font-family=\"DM Sans,sans-serif\">Backend delivery</text>\n
+    \         <line x1=\"745\" y1=\"590\" x2=\"775\" y2=\"590\" stroke=\"var(--arch-identity-line)\"
+    stroke-width=\"1.8\"></line>\n          <text x=\"783\" y=\"594\" font-size=\"11\"
+    fill=\"var(--arch-label)\" font-family=\"DM Sans,sans-serif\">Identity / authorization</text>\n
+    \       </g>\n      </svg>\n      <div style=\"margin-top:16px;padding:14px 16px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--muted);border:1px
+    solid var(--border)\">\n        Click any component to see details. Avi separates
+    control, data-plane delivery, and identity policy: the VIP can integrate with
+    an external IdP for authentication and authorization while Service Engines continue
+    to handle the application traffic path.\n      </div>\n    </div>\n  </section>\n</div>\n\n<!--
+    OUTCOME METRICS -->\n<div id=\"metrics\">\n  <section>\n    <div class=\"section-head
+    fade-in visible\">\n      <div class=\"section-eyebrow\">Outcome-Driven Metrics</div>\n
+    \     <h2>Measurable <strong>Results</strong></h2>\n      <p class=\"section-desc\">Every
+    deployment is measured against customer-defined SLOs. These outcomes reflect production
+    environments across enterprise customers.</p>\n    </div>\n\n    <div class=\"outcome-grid
+    fade-in visible\">\n      <div class=\"outcome-card\">\n        <div class=\"outcome-num\"
+    style=\"color:var(--accent)\">99.999%</div>\n        <div class=\"outcome-label\">Application
+    uptime<br>across all deployments</div>\n      </div>\n      <div class=\"outcome-card\">\n
+    \       <div class=\"outcome-num\" id=\"outcome-savings-pct\" style=\"color:var(--green)\">22.6%</div>\n
+    \       <div class=\"outcome-label\" id=\"outcome-savings-label\">3-year price
+    reduction<br>vs F5 BIG-IP LTM r2800</div>\n      </div>\n      <div class=\"outcome-card\">\n
+    \       <div class=\"outcome-num\" style=\"color:var(--purple)\">10x</div>\n        <div
+    class=\"outcome-label\">Faster app deployment<br>via automation</div>\n      </div>\n
+    \     <div class=\"outcome-card\">\n        <div class=\"outcome-num\" style=\"color:var(--amber)\">3ms</div>\n
+    \       <div class=\"outcome-label\">P99 latency, full<br>WAF + analytics inline</div>\n
+    \     </div>\n    </div>\n\n    <div class=\"metrics-grid\" style=\"margin-top:40px\">\n
+    \     <div class=\"metric-card m-blue fade-in visible\">\n        <div class=\"metric-icon\"
+    style=\"background:var(--accent-glow)\">\U0001F4C8</div>\n        <h3>Application
+    Availability</h3>\n        <div class=\"metric-value\" style=\"color:var(--accent)\">99.999%</div>\n
+    \       <div class=\"metric-desc\">Active/active HA across multiple Service Engines.
+    In-service upgrades with zero packet loss. No scheduled maintenance windows.</div>\n
+    \       <div class=\"metric-bar-wrap\">\n          <div class=\"metric-bar-label\"><span>Avi</span><span>99.999%</span></div>\n
+    \         <div class=\"metric-bar\"><div class=\"metric-bar-fill\" style=\"width:99.9%;background:var(--accent)\"></div></div>\n
+    \         <div class=\"metric-bar-label\" style=\"margin-top:8px\"><span>Legacy
+    ADC</span><span>99.9%</span></div>\n          <div class=\"metric-bar\"><div class=\"metric-bar-fill\"
+    style=\"width:70%;background:rgb(255, 1, 1)\"></div></div>\n        </div>\n      </div>\n\n
+    \     <div class=\"metric-card m-green fade-in visible\">\n        <div class=\"metric-icon\"
+    style=\"background:var(--green-bg)\">⚡</div>\n        <h3>Time to Deploy</h3>\n
+    \       <div class=\"metric-value\" style=\"color:var(--green)\">30 sec</div>\n
+    \       <div class=\"metric-desc\">New virtual service with SSL, WAF policy, and
+    health monitoring live in under 30 seconds via API or Terraform. Legacy ADC: hours
+    to days.</div>\n        <div class=\"metric-bar-wrap\">\n          <div class=\"metric-bar-label\"><span>Avi
+    (API)</span><span>30s</span></div>\n          <div class=\"metric-bar\"><div class=\"metric-bar-fill\"
+    style=\"width:5%;background:var(--accent)\"></div></div>\n          <div class=\"metric-bar-label\"
+    style=\"margin-top:8px\"><span>Legacy ADC</span><span>4 hrs</span></div>\n          <div
+    class=\"metric-bar\"><div class=\"metric-bar-fill\" style=\"width:95%;background:rgb(255,
+    1, 1)\"></div></div>\n        </div>\n      </div>\n\n      <div class=\"metric-card
+    m-purple fade-in visible\">\n        <div class=\"metric-icon\" style=\"background:var(--purple-bg)\">\U0001F512</div>\n
+    \       <h3>Threat Mitigation</h3>\n        <div class=\"metric-value\" style=\"color:var(--purple)\">100%</div>\n
+    \       <div class=\"metric-desc\">Inline WAF stops OWASP Top-10 attacks. L4/L7
+    DDoS mitigation. Zero addtl latency hops vs bolt-on appliances.</div>\n        <div
+    class=\"metric-bar-wrap\">\n          <div class=\"metric-bar-label\"><span>Avi
+    inline WAF</span><span>&lt;1ms overhead</span></div>\n          <div class=\"metric-bar\"><div
+    class=\"metric-bar-fill\" style=\"width:2%;background:var(--accent)\"></div></div>\n
+    \         <div class=\"metric-bar-label\" style=\"margin-top:8px\"><span>External
+    WAF appliance</span><span>8-15ms</span></div>\n          <div class=\"metric-bar\"><div
+    class=\"metric-bar-fill\" style=\"width:65%;background:rgb(255, 1, 1)\"></div></div>\n
+    \       </div>\n      </div>\n\n      <div class=\"metric-card m-amber fade-in
+    visible\">\n        <div class=\"metric-icon\" style=\"background:var(--amber-bg)\">\U0001F4A1</div>\n
+    \       <h3>Ops Efficiency</h3>\n        <div class=\"metric-value\" style=\"color:var(--amber)\">80%</div>\n
+    \       <div class=\"metric-desc\">Reduction in operational tickets through automated
+    health checks, predictive scaling, and self-service application portal.</div>\n
+    \       <div class=\"metric-bar-wrap\">\n          <div class=\"metric-bar-label\"><span>Ticket
+    reduction</span><span>80%</span></div>\n          <div class=\"metric-bar\"><div
+    class=\"metric-bar-fill\" style=\"width:80%;background:var(--accent)\"></div></div>\n
+    \         <div class=\"metric-bar-label\" style=\"margin-top:8px\"><span>Before
+    Avi</span><span>baseline</span></div>\n          <div class=\"metric-bar\"><div
+    class=\"metric-bar-fill\" style=\"width:100%;background:rgb(255, 1, 1)\"></div></div>\n
+    \       </div>\n      </div>\n    </div>\n\n    <!-- BAR CHART: Performance vs
+    competitor -->\n    <div class=\"chart-wrap fade-in visible\">\n      <div class=\"chart-header\">\n
+    \       <div>\n          <div class=\"chart-title\">Performance Benchmark vs Legacy
+    ADC</div>\n          <div class=\"chart-subtitle\">Throughput (Gbps) across use
+    cases — Avi vs. comparable Legacy ADC configuration</div>\n        </div>\n        <div
+    class=\"chart-legend\">\n          <div class=\"legend-item\"><span class=\"legend-dot\"
+    style=\"background:var(--accent)\"></span>Avi ALB</div>\n          <div class=\"legend-item\"><span
+    class=\"legend-dot\" style=\"background:rgba(253, 0, 0, 0.664)\"></span>Legacy
+    ADC</div>\n        </div>\n      </div>\n      <div class=\"chart-bars\" id=\"perf-chart\"><div
+    class=\"bar-group\" style=\"position: relative;\"><div class=\"bar avi\" title=\"Avi:
+    95\" style=\"height: 171px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2,
+    1);\"></div><div class=\"bar competitor\" title=\"Legacy ADC: 60\" style=\"height:
+    108px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.04s;\"></div></div><div
+    class=\"bar-group\" style=\"position: relative;\"><div class=\"bar avi\" title=\"Avi:
+    88\" style=\"height: 158px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2,
+    1) 0.06s;\"></div><div class=\"bar competitor\" title=\"Legacy ADC: 52\" style=\"height:
+    94px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;\"></div></div><div
+    class=\"bar-group\" style=\"position: relative;\"><div class=\"bar avi\" title=\"Avi:
+    92\" style=\"height: 166px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2,
+    1) 0.12s;\"></div><div class=\"bar competitor\" title=\"Legacy ADC: 58\" style=\"height:
+    104px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.16s;\"></div></div><div
+    class=\"bar-group\" style=\"position: relative;\"><div class=\"bar avi\" title=\"Avi:
+    80\" style=\"height: 144px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2,
+    1) 0.18s;\"></div><div class=\"bar competitor\" title=\"Legacy ADC: 38\" style=\"height:
+    68px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.22s;\"></div></div><div
+    class=\"bar-group\" style=\"position: relative;\"><div class=\"bar avi\" title=\"Avi:
+    90\" style=\"height: 162px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2,
+    1) 0.24s;\"></div><div class=\"bar competitor\" title=\"Legacy ADC: 30\" style=\"height:
+    54px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.28s;\"></div></div><div
+    class=\"bar-group\" style=\"position: relative;\"><div class=\"bar avi\" title=\"Avi:
+    96\" style=\"height: 173px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2,
+    1) 0.3s;\"></div><div class=\"bar competitor\" title=\"Legacy ADC: 45\" style=\"height:
+    81px; transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.34s;\"></div></div></div>\n
+    \     <div class=\"chart-labels\" id=\"perf-labels\"><div class=\"chart-label\">L4
+    TCP</div><div class=\"chart-label\">L7 HTTP</div><div class=\"chart-label\">SSL
+    TPS</div><div class=\"chart-label\">WAF ON</div><div class=\"chart-label\">K8s
+    Ingress</div><div class=\"chart-label\">GSLB</div></div>\n    </div>\n  </section>\n</div>\n\n<!--
+    COST COMPARISON -->\n<div class=\"cost-section\" id=\"cost\"><section>\n<div class=\"section-head
+    fade-in visible\"><div class=\"section-eyebrow\">Cost Analysis</div><h2>Three-Year
+    <strong>Price Comparison</strong></h2><p class=\"section-desc\">3-year TCO comparison
+    for a mid-size enterprise with 500 Mbps average throughput, 200 virtual services,
+    and 2 data centers.</p></div>\n<div class=\"cost-layout fade-in visible\">\n<div
+    class=\"cost-card\"><div class=\"cost-vendor\">Legacy ADC</div><div class=\"cost-product\">4
+    × ADC Appliances</div><div class=\"cost-items\">\n<div class=\"cost-item\"><span
+    class=\"cost-item-label\">Product cost · one-time</span><span class=\"cost-item-value\">$298,424</span></div>\n<div
+    class=\"cost-item\"><span class=\"cost-item-label\">License cost · 3 years</span><span
+    class=\"cost-item-value\">$288,000</span></div>\n<div class=\"cost-item\"><span
+    class=\"cost-item-label\">Advanced WAF upgrade · $30,000 × 4</span><span class=\"cost-item-value\">$120,000</span></div>\n<div
+    class=\"cost-item\"><span class=\"cost-item-label\">3-year total · no discount</span><span
+    class=\"cost-item-value\">$706,424</span></div>\n</div><div class=\"discount-control\"><label
+    for=\"f5-discount\"><span>Competitor discount</span><output id=\"f5-discount-output\">0%</output></label><input
+    id=\"f5-discount\" type=\"range\" min=\"0\" max=\"90\" step=\"1\" value=\"0\"
+    aria-label=\"Competitor discount percentage\"></div><div class=\"cost-total\"><span
+    class=\"cost-total-label\">Adjusted 3-year price · USD</span><span class=\"cost-total-value\"
+    id=\"f5-net\" style=\"color:var(--red)\">$706,424</span></div></div>\n<div class=\"cost-card
+    featured\"><div class=\"cost-vendor\">VMware Avi Load Balancer</div><div class=\"cost-badge\">Recommended</div>\n<div
+    class=\"cost-product\">16 × Service Units (4 SE @ 4 vCPU)</div><div class=\"cost-items\">\n<div
+    class=\"cost-item\"><span class=\"cost-item-label\">List / service unit / year</span><span
+    class=\"cost-item-value\">$11,390</span></div>\n<div class=\"cost-item\"><span
+    class=\"cost-item-label\">16 SUs · annual price</span><span class=\"cost-item-value\">$182,240</span></div>\n<div
+    class=\"cost-item\"><span class=\"cost-item-label\">WAF · included with Enterprise
+    license</span><span class=\"cost-item-value positive\">$0</span></div>\n<div class=\"cost-item\"><span
+    class=\"cost-item-label\">16 SUs × 3 years · no discount</span><span class=\"cost-item-value\">$546,720</span></div>\n</div><div
+    class=\"discount-control\"><label for=\"avi-discount\"><span>Avi discount</span><output
+    id=\"avi-discount-output\">0%</output></label><input id=\"avi-discount\" type=\"range\"
+    min=\"0\" max=\"90\" step=\"1\" value=\"0\" aria-label=\"Avi discount percentage\"></div><div
+    class=\"cost-total\"><span class=\"cost-total-label\">Adjusted 36-month price
+    · USD</span><span class=\"cost-total-value\" id=\"avi-net\" style=\"color:var(--green)\">$546,720</span></div></div>\n</div>\n<div
+    class=\"cost-savings-banner fade-in visible\"><div><div class=\"savings-label\"
+    id=\"savings-label\">3-year price difference in Avi's favor</div><div id=\"savings-formula\"
+    style=\"font-size:13px;color:var(--muted);margin-top:4px\">$706,424 − $546,720</div></div><div
+    class=\"savings-value\" id=\"savings-value\">$159,704 lower (22.6%)</div></div>\n<div
+    class=\"chart-wrap fade-in visible\"><div class=\"chart-header\"><div><div class=\"chart-title\">Adjusted
+    price comparison</div><div class=\"chart-subtitle\">Both supplied three-year totals
+    start with no discount. Use the controls above to test discounted pricing.</div></div><div
+    class=\"chart-legend\"><div class=\"legend-item\"><span class=\"legend-dot\" style=\"background:var(--legacy-bar)\"></span>Legacy
+    ADC + Advanced WAF</div><div class=\"legend-item\"><span class=\"legend-dot\"
+    style=\"background:var(--accent)\"></span>Avi Enterprise</div></div></div><div
+    class=\"chart-bars\"><div class=\"bar-group price-bar-group\"><div id=\"f5-price-bar\"
+    class=\"bar competitor\" style=\"height:180px\" title=\"Legacy ADC: $706,424\"
+    role=\"img\" aria-label=\"Legacy ADC adjusted 3-year price: $706,424\"></div></div><div
+    class=\"bar-group price-bar-group\"><div id=\"avi-price-bar\" class=\"bar avi\"
+    style=\"height:139.31px\" title=\"Avi: $546,720\" role=\"img\" aria-label=\"Avi
+    adjusted 36-month price: $546,720\"></div></div></div><div class=\"chart-labels\"><div
+    class=\"chart-label\" id=\"f5-chart-label\">Legacy ADC + WAF<br>$706,424</div><div
+    class=\"chart-label\" id=\"avi-chart-label\">Avi Enterprise · 16 SUs<br>$546,720</div></div></div>\n</section></div>\n\n
+    \ <!-- FEATURES -->\n     <div id=\"features\">\n  <section>\n    <div class=\"section-head
+    fade-in visible\">\n      <div class=\"section-eyebrow\">Feature Comparison</div>\n
+    \     <h2>Eliminate <strong>Hardware Silos</strong></h2>\n      <p class=\"section-desc\">Consolidated
+    platform architecture unifies core application delivery services into a single,
+    cohesive stack.</p>\n    </div>\n    <div style=\"background:var(--card);border:1px
+    solid var(--border);border-radius:16px;padding:32px;margin-top:40px\" class=\"fade-in
+    visible\">\n      <div style=\"font-size:16px;font-weight:600;color:var(--text);margin-bottom:24px\">Feature
+    Comparison</div>\n      <table class=\"compare-table\">\n        <thead>\n          <tr>\n
+    \           <th>Capability</th>\n            <th>Avi ALB</th>\n            <th>Legacy
+    ADC</th>\n            <th>Hyperscaler ALB</th>\n          </tr>\n        </thead>\n
+    \       <tbody>\n          <tr>\n            <td>Deployment model</td>\n            <td
+    class=\"win\"><span class=\"check\">✓</span> Software-defined data plane</td>\n
+    \           <td>Appliance / virtual appliance model</td>\n            <td><span
+    class=\"check\">✓</span> Cloud-managed service</td>\n          </tr>\n          <tr>\n
+    \           <td>Environment coverage</td>\n            <td class=\"win\"><span
+    class=\"check\">✓</span> Data center, cloud &amp; Kubernetes</td>\n            <td>Primarily
+    customer-managed environments</td>\n            <td>Native to its cloud environment</td>\n
+    \         </tr>\n          <tr>\n            <td>Application security integration</td>\n
+    \           <td class=\"win\"><span class=\"check\">✓</span> Integrated L4–L7
+    security services</td>\n            <td>Advanced WAF requires a separately priced
+    module</td>\n            <td>Available through adjacent cloud security services</td>\n
+    \         </tr>\n          <tr>\n            <td>Application analytics</td>\n
+    \           <td class=\"win\"><span class=\"check\">✓</span> End-to-end application
+    telemetry</td>\n            <td>Platform-dependent telemetry and logging</td>\n
+    \           <td>Cloud-native metrics and logging</td>\n          </tr>\n          <tr>\n
+    \           <td>Automation &amp; API</td>\n            <td class=\"win\"><span
+    class=\"check\">✓</span> REST API, Terraform &amp; Ansible</td>\n            <td>API
+    and infrastructure automation support</td>\n            <td><span class=\"check\">✓</span>
+    Cloud API and IaC support</td>\n          </tr>\n          <tr>\n            <td>Kubernetes
+    integration</td>\n            <td class=\"win\"><span class=\"check\">✓</span>
+    Native controller integration</td>\n            <td>Controller / operator integration</td>\n
+    \           <td>Cloud-native ingress / service integration</td>\n          </tr>\n
+    \         <tr>\n            <td>Lifecycle operations</td>\n            <td class=\"win\"><span
+    class=\"check\">✓</span> Automated rolling lifecycle</td>\n            <td>Customer-managed
+    lifecycle</td>\n            <td><span class=\"check\">✓</span> Provider-managed
+    lifecycle</td>\n          </tr>\n          <tr>\n            <td>Elastic capacity</td>\n
+    \           <td class=\"win\"><span class=\"check\">✓</span> Automated Service
+    Engine scale-out</td>\n            <td>Capacity expansion by platform / deployment
+    model</td>\n            <td><span class=\"check\">✓</span> Provider-managed elasticity</td>\n
+    \         </tr>\n        </tbody>\n      </table>\n    </div>\n  </section>\n</div>\n\n<!--
+    CAPABILITIES -->\n<div id=\"capabilities\">\n  <section>\n    <div class=\"section-head
+    fade-in visible\">\n      <div class=\"section-eyebrow\">Platform Capabilities</div>\n
+    \     <h2>Everything in <strong>One Platform</strong></h2>\n      <p class=\"section-desc\">No
+    bolt-on appliances. No separate WAF vendor. No dedicated monitoring stack. One
+    platform, full stack.</p>\n    </div>\n\n    <div class=\"features-grid fade-in
+    visible\">\n      <div class=\"feature-item\">\n        <div class=\"feature-icon\"
+    style=\"background:var(--accent-glow)\">\n          <svg width=\"24\" height=\"24\"
+    viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"1.5\"><polyline
+    points=\"22 12 18 12 15 21 9 3 6 12 2 12\"></polyline></svg>\n        </div>\n
+    \       <h3>Full-Stack Analytics</h3>\n        <p>Client-to-server latency, connection
+    logs, SSL handshake time, and server response time — all captured inline without
+    agents or taps.</p>\n      </div>\n      <div class=\"feature-item\">\n        <div
+    class=\"feature-icon\" style=\"background:var(--green-bg)\">\n          <svg width=\"24\"
+    height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--green)\" stroke-width=\"1.5\"><path
+    d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"></path></svg>\n        </div>\n
+    \       <h3>Inline WAF</h3>\n        <p>OWASP CRS integrated into the data plane.
+    No extra hop, no additional appliance. Covers SQL injection, XSS, CSRF, and bot
+    mitigation.</p>\n      </div>\n      <div class=\"feature-item\">\n        <div
+    class=\"feature-icon\" style=\"background:var(--purple-bg)\">\n          <svg
+    width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--purple)\"
+    stroke-width=\"1.5\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"></rect><line
+    x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line><line x1=\"12\" y1=\"17\" x2=\"12\"
+    y2=\"21\"></line></svg>\n        </div>\n        <h3>Multi-Cloud Control</h3>\n
+    \       <p>Single pane of glass for AWS, Azure, GCP, VMware, and bare-metal. Define
+    policy once, enforce everywhere with consistent behavior.</p>\n      </div>\n
+    \     <div class=\"feature-item\">\n        <div class=\"feature-icon\" style=\"background:var(--amber-bg)\">\n
+    \         <svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\"
+    stroke=\"var(--amber)\" stroke-width=\"1.5\"><polyline points=\"17 1 21 5 17 9\"></polyline><path
+    d=\"M3 11V9a4 4 0 0 1 4-4h14\"></path><polyline points=\"7 23 3 19 7 15\"></polyline><path
+    d=\"M21 13v2a4 4 0 0 1-4 4H3\"></path></svg>\n        </div>\n        <h3>Elastic
+    Auto-Scaling</h3>\n        <p>Service Engines scale out in under 60 seconds based
+    on CPU, connections, or custom metrics. Scale in automatically during low traffic.</p>\n
+    \     </div>\n      <div class=\"feature-item\">\n        <div class=\"feature-icon\"
+    style=\"background:var(--accent-glow)\">\n          <svg width=\"24\" height=\"24\"
+    viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"1.5\"><circle
+    cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"></line><line
+    x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"></line></svg>\n        </div>\n        <h3>AI/ML
+    Anomaly Detection</h3>\n        <p>Baseline learning for every virtual service.
+    Automatic alerts on latency spikes, error rate deviations, and unusual traffic
+    patterns.</p>\n      </div>\n      <div class=\"feature-item\">\n        <div
+    class=\"feature-icon\" style=\"background:var(--green-bg)\">\n          <svg width=\"24\"
+    height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--green)\" stroke-width=\"1.5\"><polyline
+    points=\"16 18 22 12 16 6\"></polyline><polyline points=\"8 6 2 12 8 18\"></polyline></svg>\n
+    \       </div>\n        <h3>Infrastructure as Code</h3>\n        <p>Official Terraform
+    provider, Ansible modules, and full REST API. Every configuration object is version-controlled
+    and CI/CD-ready.</p>\n      </div>\n      <div class=\"feature-item\">\n        <div
+    class=\"feature-icon\" style=\"background:var(--purple-bg)\">\n          <svg
+    width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--purple)\"
+    stroke-width=\"1.5\"><path d=\"M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7
+    4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"></path></svg>\n
+    \       </div>\n        <h3>Kubernetes Native</h3>\n        <p>AKO (Avi Kubernetes
+    Operator) automatically provisions virtual services from Ingress objects and Service
+    type LoadBalancer annotations.</p>\n      </div>\n      <div class=\"feature-item\">\n
+    \       <div class=\"feature-icon\" style=\"background:var(--amber-bg)\">\n          <svg
+    width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--amber)\"
+    stroke-width=\"1.5\"><path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"></path><circle
+    cx=\"9\" cy=\"7\" r=\"4\"></circle><path d=\"M23 21v-2a4 4 0 0 0-3-3.87\"></path><path
+    d=\"M16 3.13a4 4 0 0 1 0 7.75\"></path></svg>\n        </div>\n        <h3>Role-Based
+    Access</h3>\n        <p>Granular RBAC with tenant isolation. Application teams
+    manage their own virtual services without access to platform-level configuration.</p>\n
+    \     </div>\n      <div class=\"feature-item\">\n        <div class=\"feature-icon\"
+    style=\"background:var(--accent-glow)\">\n          <svg width=\"24\" height=\"24\"
+    viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"1.5\"><circle
+    cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"></line><path
+    d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3
+    15.3 0 0 1 4-10z\"></path></svg>\n        </div>\n        <h3>Global Server LB</h3>\n
+    \       <p>DNS-based GSLB with health-aware routing. Direct users to the optimal
+    data center using latency, geo-proximity, or custom scoring.</p>\n      </div>\n
+    \   </div>\n  </section>\n</div>\n\n<!-- CTA -->\n<div class=\"cta-section section-wrap\">\n
+    \ <section>\n    <div class=\"cta-inner fade-in visible\">\n      <div class=\"eyebrow\"
+    style=\"margin:0 auto 24px\">\n        <span class=\"eyebrow-dot\"></span>\n        Start
+    Your Evaluation\n      </div>\n      <h2>Ready to eliminate<br><strong>legacy
+    overhead?</strong></h2>\n      <p>Schedule a live demo with a solutions engineer.
+    We will deploy a proof-of-concept in your environment upon request.</p>\n      <div
+    class=\"cta-buttons\">\n        <a href=\"#\" class=\"btn btn-primary btn-large\">Request
+    Live Demo</a>\n        <a href=\"#\" class=\"btn btn-ghost btn-large\">Download
+    Data Sheet</a>\n      </div>\n    </div>\n  </section>\n</div>\n\n<!-- FOOTER
+    -->\n<footer>\n  <div class=\"footer-logo\">\n    <div class=\"nav-logo-mark\">Avi</div>\n
+    \   VMware Avi Load Balancer — VMware by Broadcom\n  </div>\n  <div class=\"footer-note\">Platform
+    demo page · Not for distribution · TCO figures are illustrative; sources and assumptions
+    in Cost Analysis</div>\n</footer>\n\n<!-- TOOLTIP OVERLAY -->\n<div style=\"display:
+    none; position: fixed; inset: 0px; z-index: 50;\" id=\"overlay\" onclick=\"closeTooltip()\"></div>\n<div
+    id=\"detail-panel\" style=\"display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); z-index: 100; background: var(--card2); border:
+    1px solid var(--border2); border-radius: 16px; padding: 28px 32px; max-width:
+    400px; width: 90%;\">\n  <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:16px\">\n
+    \   <div id=\"panel-title\" style=\"font-size:16px;font-weight:600;color:var(--text)\">Analytics
+    &amp; Logs</div>\n    <button onclick=\"closeTooltip()\" style=\"background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1\">×</button>\n
+    \ </div>\n  <div id=\"panel-body\" style=\"font-size:14px;color:var(--muted2);line-height:1.7\">Real-time
+    logs and metrics streamed from each SE to the Controller. Full-stack telemetry:
+    client RTT, server RTT, DNS, SSL, app transaction time. Export to Splunk, Kafka,
+    Elasticsearch.</div>\n</div>\n\n<script>\n  // THEME TOGGLE\n  (function(){const
+    r=document.documentElement,t=document.getElementById('theme-toggle');if(!t)return;function
+    sync(){const l=r.getAttribute('data-theme')==='light';t.setAttribute('aria-pressed',String(l));t.setAttribute('aria-label',l?'Switch
+    to dark mode':'Switch to light mode');t.title=l?'Switch to dark mode':'Switch
+    to light mode'}sync();t.addEventListener('click',()=>{const n=r.getAttribute('data-theme')==='light'?'dark':'light';r.setAttribute('data-theme',n);try{localStorage.setItem('avi-theme',n)}catch(e){}sync()})})();\n\n
+    \ // DYNAMIC PRICE COMPARISON\n  (function() {\n    const f5List = 706424;\n    const
+    aviList = 546720;\n    const f5Discount = document.getElementById('f5-discount');\n
+    \   const aviDiscount = document.getElementById('avi-discount');\n    if (!f5Discount
+    || !aviDiscount) return;\n\n    const usd = value => value.toLocaleString('en-US',
+    {\n      style: 'currency', currency: 'USD', minimumFractionDigits: Number.isInteger(value)
+    ? 0 : 2,\n      maximumFractionDigits: 2\n    });\n\n    function updatePricing()
+    {\n      const f5Pct = Number(f5Discount.value);\n      const aviPct = Number(aviDiscount.value);\n
+    \     const f5Net = f5List * (1 - f5Pct / 100);\n      const aviNet = aviList
+    * (1 - aviPct / 100);\n      const difference = f5Net - aviNet;\n      const aviLower
+    = difference >= 0;\n      const percentage = f5Net > 0 ? Math.abs(difference)
+    / f5Net * 100 : 0;\n      const maxList = Math.max(f5List, aviList);\n\n      document.getElementById('f5-discount-output').textContent
+    = f5Pct + '%';\n      document.getElementById('avi-discount-output').textContent
+    = aviPct + '%';\n      document.getElementById('f5-net').textContent = usd(f5Net);\n
+    \     document.getElementById('avi-net').textContent = usd(aviNet);\n      document.getElementById('savings-label').textContent
+    = aviLower ? \"3-year price difference in Avi's favor\" : \"3-year price difference
+    in competitor's favor\";\n      document.getElementById('savings-formula').textContent
+    = usd(f5Net) + ' − ' + usd(aviNet);\n\n      const result = document.getElementById('savings-value');\n
+    \     result.textContent = usd(Math.abs(difference)) + (aviLower ? ' lower ('
+    : ' higher (') + percentage.toFixed(1) + '%)';\n      result.style.color = aviLower
+    ? 'var(--green)' : 'var(--red)';\n\n      document.getElementById('hero-savings-pct').textContent
+    = percentage.toFixed(1);\n      document.getElementById('hero-savings-label').textContent
+    = aviLower ? '3-year price reduction' : 'Avi 3-year price premium';\n      document.getElementById('outcome-savings-pct').textContent
+    = percentage.toFixed(1) + '%';\n      document.getElementById('outcome-savings-pct').style.color
+    = aviLower ? 'var(--green)' : 'var(--red)';\n      document.getElementById('outcome-savings-label').innerHTML
+    = aviLower ? '3-year price reduction<br>vs Legacy ADC' : 'Avi 3-year price premium<br>vs
+    Legacy ADC';\n\n      const f5Bar = document.getElementById('f5-price-bar');\n
+    \     const aviBar = document.getElementById('avi-price-bar');\n      f5Bar.style.height
+    = Math.max(2, f5Net / maxList * 180) + 'px';\n      aviBar.style.height = Math.max(2,
+    aviNet / maxList * 180) + 'px';\n      f5Bar.title = 'Legacy ADC: ' + usd(f5Net);\n
+    \     aviBar.title = 'Avi: ' + usd(aviNet);\n      f5Bar.setAttribute('aria-label',
+    'Legacy ADC adjusted 3-year price: ' + usd(f5Net));\n      aviBar.setAttribute('aria-label',
+    'Avi adjusted 36-month price: ' + usd(aviNet));\n      document.getElementById('f5-chart-label').innerHTML
+    = 'Legacy ADC + WAF<br>' + usd(f5Net);\n      document.getElementById('avi-chart-label').innerHTML
+    = 'Avi Enterprise · 16 SUs<br>' + usd(aviNet);\n    }\n\n    f5Discount.addEventListener('input',
+    updatePricing);\n    aviDiscount.addEventListener('input', updatePricing);\n    updatePricing();\n
+    \ })();\n\n  // PERFORMANCE CHART\n  (function() {\n    const categories = ['L4
+    TCP', 'L7 HTTP', 'SSL TPS', 'WAF ON', 'K8s Ingress', 'GSLB'];\n    const avi =
+    [95, 88, 92, 80, 90, 96];\n    const legacy = [60, 52, 58, 38, 30, 45];\n    const
+    chart = document.getElementById('perf-chart');\n    const labels = document.getElementById('perf-labels');\n
+    \   if (!chart) return;\n\n    chart.innerHTML = '';\n    labels.innerHTML = '';\n
+    \   const maxH = 180;\n    const maxVal = 100;\n\n    categories.forEach((cat,
+    i) => {\n      const aviH = Math.round((avi[i] / maxVal) * maxH);\n      const
+    legH = Math.round((legacy[i] / maxVal) * maxH);\n\n      const group = document.createElement('div');\n
+    \     group.className = 'bar-group';\n      group.style.position = 'relative';\n\n
+    \     const b1 = document.createElement('div');\n      b1.className = 'bar avi';\n
+    \     b1.style.height = '0px';\n      b1.title = `Avi: ${avi[i]}`;\n\n      const
+    b2 = document.createElement('div');\n      b2.className = 'bar competitor';\n
+    \     b2.style.height = '0px';\n      b2.title = `Legacy ADC: ${legacy[i]}`;\n\n
+    \     group.appendChild(b1);\n      group.appendChild(b2);\n      chart.appendChild(group);\n\n
+    \     setTimeout(() => {\n        b1.style.height = aviH + 'px';\n        b2.style.height
+    = legH + 'px';\n        b1.style.transition = 'height 0.8s cubic-bezier(0.4,0,0.2,1)
+    ' + (i * 0.06) + 's';\n        b2.style.transition = 'height 0.8s cubic-bezier(0.4,0,0.2,1)
+    ' + (i * 0.06 + 0.04) + 's';\n      }, 300);\n\n      const lbl = document.createElement('div');\n
+    \     lbl.className = 'chart-label';\n      lbl.textContent = cat;\n      labels.appendChild(lbl);\n
+    \   });\n  })();\n\n  // ARCH DETAIL PANEL\n  function showTip(e, title, body)
+    {\n    document.getElementById('panel-title').textContent = title;\n    document.getElementById('panel-body').textContent
+    = body;\n    document.getElementById('detail-panel').style.display = 'block';\n
+    \   document.getElementById('overlay').style.display = 'block';\n    e.stopPropagation();\n
+    \ }\n\n  function closeTooltip() {\n    document.getElementById('detail-panel').style.display
+    = 'none';\n    document.getElementById('overlay').style.display = 'none';\n  }\n\n
+    \ // SCROLL ANIMATIONS\n  const faders = document.querySelectorAll('.fade-in');\n
+    \ const io = new IntersectionObserver((entries) => {\n    entries.forEach((entry,
+    idx) => {\n      if (entry.isIntersecting) {\n        setTimeout(() => entry.target.classList.add('visible'),
+    idx * 60);\n        io.unobserve(entry.target);\n      }\n    });\n  }, { threshold:
+    0.1 });\n\n  faders.forEach(el => io.observe(el));\n</script>\n\n\n</body>\n</html>\n"
+kind: ConfigMap
+metadata:
+  name: avi-demo-html
+  namespace: default

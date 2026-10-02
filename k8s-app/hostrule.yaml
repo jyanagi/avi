@@ -1,0 +1,24 @@
+apiVersion: ako.vmware.com/v1alpha1
+kind: HostRule
+metadata:
+  name: avi-demo-hostrule
+  namespace: avi-demo
+spec:
+  virtualhost:
+    fqdn: avi-demo.us-east.demo.lab
+    enableVirtualHost: true
+    applicationProfile: System-Secure-HTTP
+    wafPolicy: WAF-Enforcement-Policy
+    tls:
+      sslProfile: System-Standard-PFS
+      sslKeyCertificate:
+        name: us-east-wildcard
+        type: ref
+      termination: edge
+    analyticsProfile: System-Analytics-Profile
+    analyticsPolicy:
+      fullClientLogs:
+        enabled: true
+        throttle: DISABLED
+      logAllHeaders: true
+
